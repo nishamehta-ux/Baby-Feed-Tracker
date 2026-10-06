@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'data/feeding_store.dart';
-import 'screens/home_screen.dart';
+import 'screens/main_shell.dart';
 import 'theme.dart';
 
 Future<void> main() async {
@@ -22,7 +22,7 @@ class BabyFeedTrackerApp extends StatelessWidget {
       title: 'Baby Feed Tracker',
       debugShowCheckedModeBanner: false,
       theme: buildTheme(),
-      home: HomeScreen(store: store),
+      home: MainShell(store: store),
     );
   }
 }

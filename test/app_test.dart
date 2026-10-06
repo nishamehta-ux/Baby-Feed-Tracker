@@ -16,7 +16,7 @@ void main() {
     await store.load();
 
     await tester.pumpWidget(BabyFeedTrackerApp(store: store));
-    expect(find.text('Overview'), findsOneWidget);
+    expect(find.text('Today'), findsWidgets);
     expect(find.text('Formula: 0 ml'), findsWidgets);
 
     await tester.tap(find.text('Add a feeding'));
@@ -40,11 +40,20 @@ void main() {
     expect(store.feedings.single.type, FeedingType.bottle);
     expect(find.text('Formula: 40 ml'), findsWidgets);
 
+
+    // Weekly summary tab.
     await tester.tap(find.text('Week'));
     await tester.pumpAndSettle();
-    expect(find.text('Bottle feeding'), findsOneWidget);
-    expect(find.text('Breastfeeding'), findsOneWidget);
-    expect(find.text('Formula: 40 ml'), findsWidgets);
+    expect(find.text('Weekly summary'), findsOneWidget);
+    expect(find.text('Average per day'), findsOneWidget);
+    expect(find.textContaining('40 ml formula'), findsOneWidget);
+
+    // Tapping a day opens it on the Today tab.
+    await tester.ensureVisible(find.textContaining('40 ml formula'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.textContaining('40 ml formula'));
+    await tester.pumpAndSettle();
+    expect(find.text('Total today'), findsOneWidget);
   });
 
   testWidgets('bottle tab can log expressed breast milk', (tester) async {
