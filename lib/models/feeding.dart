@@ -1,6 +1,6 @@
 enum FeedingType {
-  breast('Breastfeeding', 'Breast'),
-  bottle('Bottle feeding', 'Bottle'),
+  breast('Breastfeeding', 'Breastfeeding'),
+  bottle('Formula (bottle)', 'Formula'),
   breastMilk('Breast milk (bottle)', 'Breast milk');
 
   const FeedingType(this.label, this.shortLabel);

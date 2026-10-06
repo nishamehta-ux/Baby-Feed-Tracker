@@ -19,6 +19,8 @@ class WeekGrid extends StatelessWidget {
   final List<Feeding> feedings;
   final ValueChanged<DateTime> onDayTap;
 
+  static const dayLabels = ['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su'];
+
   static const _rowHeight = 18.0;
   static const _gap = 3.0;
   static const _labelWidth = 44.0;

@@ -14,7 +14,7 @@ class AppColors {
 
   static const breast = Color(0xFF3F2C6E);
   static const bottle = Color(0xFF7F57D1);
-  static const breastMilk = Color(0xFF5B7FE0);
+  static const breastMilk = Color(0xFF1F9E8F);
 
   static Color forType(FeedingType type) => switch (type) {
         FeedingType.breast => breast,

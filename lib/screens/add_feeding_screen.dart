@@ -36,8 +36,9 @@ class _AddFeedingScreenState extends State<AddFeedingScreen> {
   BreastSide? _endSide;
   Timer? _ticker;
 
-  // Bottle / breast milk.
+  // Bottle: formula or expressed breast milk.
   int _amountMl = 30;
+  FeedingType _bottleContent = FeedingType.bottle;
 
   bool get _isEditing => widget.existing != null;
 
@@ -54,7 +55,10 @@ class _AddFeedingScreenState extends State<AddFeedingScreen> {
     _left = e?.leftDuration ?? Duration.zero;
     _right = e?.rightDuration ?? Duration.zero;
     _endSide = e?.endSide;
-    if (e != null && e.isBottle) _amountMl = e.amountMl;
+    if (e != null && e.isBottle) {
+      _amountMl = e.amountMl;
+      _bottleContent = e.type;
+    }
   }
 
   @override
@@ -373,19 +377,26 @@ class _AddFeedingScreenState extends State<AddFeedingScreen> {
   }
 
   Widget _buildTabs() {
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
+    final isBottle = _type != FeedingType.breast;
+    return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20),
       child: Row(
         children: [
-          for (final type in FeedingType.values) ...[
-            _TypeTab(
-              label: type.label,
-              selected: _type == type,
-              onTap: () => setState(() => _type = type),
+          Expanded(
+            child: _TypeTab(
+              label: 'Breastfeeding',
+              selected: !isBottle,
+              onTap: () => setState(() => _type = FeedingType.breast),
             ),
-            const SizedBox(width: 10),
-          ],
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: _TypeTab(
+              label: 'Bottle feeding',
+              selected: isBottle,
+              onTap: () => setState(() => _type = _bottleContent),
+            ),
+          ),
         ],
       ),
     );
@@ -470,14 +481,23 @@ class _AddFeedingScreenState extends State<AddFeedingScreen> {
   List<Widget> _buildBottleSection(BuildContext context) {
     void setAmount(int v) => setState(() => _amountMl = v.clamp(0, 500));
     return [
-      if (_type == FeedingType.breastMilk)
-        const Padding(
-          padding: EdgeInsets.only(bottom: 12),
-          child: Text(
-            'Expressed breast milk given by bottle',
-            style: TextStyle(color: AppColors.muted),
-          ),
-        ),
+      const Text("What's in the bottle?*", style: TextStyle(fontSize: 16)),
+      const SizedBox(height: 8),
+      Row(
+        children: [
+          for (final content in const [FeedingType.bottle, FeedingType.breastMilk]) ...[
+            if (content == FeedingType.breastMilk) const SizedBox(width: 12),
+            Expanded(
+              child: _ChoiceButton(
+                label: content.shortLabel,
+                selected: _type == content,
+                onTap: () => setState(() => _type = _bottleContent = content),
+              ),
+            ),
+          ],
+        ],
+      ),
+      const SizedBox(height: 24),
       BottleGauge(amountMl: _amountMl, onChanged: setAmount),
       const SizedBox(height: 24),
       const Text('Amount', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
@@ -578,9 +598,12 @@ class _TypeTab extends StatelessWidget {
         borderRadius: BorderRadius.circular(14),
         onTap: onTap,
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
           child: Text(
             label,
+            textAlign: TextAlign.center,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
             style: TextStyle(
               fontSize: 17,
               fontWeight: FontWeight.w600,

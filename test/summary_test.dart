@@ -64,5 +64,7 @@ void main() {
   test('formatDuration', () {
     expect(formatDuration(const Duration(minutes: 36, seconds: 10)), '36 m 10 s');
     expect(formatDuration(const Duration(hours: 1, minutes: 5)), '1 h 5 m');
+    expect(formatDuration(const Duration(hours: 1)), '1 h');
+    expect(formatDuration(const Duration(minutes: 13)), '13 m');
   });
 }

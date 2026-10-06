@@ -89,11 +89,11 @@ class TotalsRow extends StatelessWidget {
       children: [
         TotalChip(
           color: AppColors.breast,
-          label: 'Breast: ${formatDuration(totals.breast)}',
+          label: 'Breastfeeding: ${formatDuration(totals.breast)}',
         ),
         TotalChip(
           color: AppColors.bottle,
-          label: 'Bottle: ${totals.bottleMl} ml',
+          label: 'Formula: ${totals.bottleMl} ml',
         ),
         TotalChip(
           color: AppColors.breastMilk,

@@ -4,13 +4,13 @@ A simple Flutter app for logging a baby's feedings and seeing daily and weekly s
 
 ## Features
 
-- **Three feeding types**
+- **Two ways to log a feeding**
   - **Breastfeeding**: tap the Left/Right circles to start, pause or switch the side timers. You can also type each side's time. Choose which breast you ended with (required).
-  - **Bottle feeding** (formula): set the amount with the bottle gauge (tap or drag it), the −/+ buttons (10 ml steps), or by typing.
-  - **Breast milk (bottle)**: expressed breast milk given by bottle, with the same amount controls.
+  - **Bottle feeding**: choose what's in the bottle (**formula** or expressed **breast milk**), then set the amount with the bottle gauge (tap or drag it), the −/+ buttons (10 ml steps), or by typing.
   - Every entry has a start and end date/time and optional notes.
 - **Overview**
   - **Week view** (Mon–Sun): weekly totals, daily averages, an hourly grid coloured by feeding type, and a per-day breakdown. Tap a day to open it.
+  - **Trends**: three charts (breastfeeding time, formula by bottle, breast milk by bottle). Switch between *This week by day* and *Last 8 weeks* (average per day for each week) to see how feeds increase. Each chart compares this week's daily average with last week's. Averages for the current week count finished days only.
   - **Day view**: totals for the day and a list of feedings. Tap one to edit it, swipe left to delete it (with undo).
   - A banner with the time of the last feeding, and arrows to move between weeks or days.
 - The baby's name can be edited by tapping it.
@@ -46,6 +46,6 @@ lib/
 
 ## Screenshots
 
-| Week | Day | Breastfeeding | Bottle |
+| Trends (last 8 weeks) | Day | Breastfeeding | Bottle |
 |---|---|---|---|
 | ![](docs/screenshots/week.png) | ![](docs/screenshots/day.png) | ![](docs/screenshots/add_breastfeeding.png) | ![](docs/screenshots/add_bottle.png) |

@@ -79,7 +79,7 @@ String formatDuration(Duration d) {
   final h = d.inHours;
   final m = d.inMinutes.remainder(60);
   final s = d.inSeconds.remainder(60);
-  if (h > 0) return '$h h $m m';
+  if (h > 0) return m == 0 ? '$h h' : '$h h $m m';
   if (m > 0) return s == 0 ? '$m m' : '$m m $s s';
   return '$s s';
 }

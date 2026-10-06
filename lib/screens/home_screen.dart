@@ -7,9 +7,25 @@ import '../models/summary.dart';
 import '../theme.dart';
 import '../widgets/common.dart';
 import '../widgets/week_grid.dart';
+import '../widgets/weekly_trend_chart.dart';
 import 'add_feeding_screen.dart';
 
 enum OverviewMode { week, day }
+
+enum TrendRange { byDay, byWeek }
+
+/// Totals for one week and the number of days they cover.
+class _WeekAverage {
+  const _WeekAverage(this.totals, this.days);
+
+  final FeedingTotals totals;
+  final int days;
+
+  bool get isEmpty => totals.count == 0;
+
+  double of(double Function(FeedingTotals t) measure) =>
+      days == 0 ? 0 : measure(totals) / days;
+}
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key, required this.store});
@@ -22,6 +38,7 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   OverviewMode _mode = OverviewMode.week;
+  TrendRange _trendRange = TrendRange.byDay;
   DateTime _anchor = dateOnly(DateTime.now());
 
   FeedingStore get store => widget.store;
@@ -237,7 +254,61 @@ class _HomeScreenState extends State<HomeScreen> {
   List<Widget> _buildWeek(DateTime weekStart, List<Feeding> feedings) {
     final isCurrentWeek = weekStart == startOfWeek(_today);
     final elapsedDays = isCurrentWeek ? _today.difference(weekStart).inDays + 1 : 7;
-    final avg = FeedingTotals.of(feedings).dividedBy(elapsedDays);
+
+    // Averages count only finished days: today's partial total would drag them
+    // down. On a Monday there is no finished day yet, so today is used.
+    final skipToday = isCurrentWeek && elapsedDays > 1;
+    List<Feeding> finished(List<Feeding> list) =>
+        skipToday ? list.where((f) => !isSameDay(f.start, _today)).toList() : list;
+    final avgDays = skipToday ? elapsedDays - 1 : elapsedDays;
+    final avg = FeedingTotals.of(finished(feedings)).dividedBy(avgDays);
+    final daily = List.generate(
+      7,
+      (i) => FeedingTotals.of(feedingsOnDay(
+        feedings,
+        DateTime(weekStart.year, weekStart.month, weekStart.day + i),
+      )),
+    );
+
+    // Daily average per week for the 8 weeks ending with this one; the last
+    // entry is this week, the one before it is last week.
+    final weeks = [
+      for (var k = 7; k >= 0; k--)
+        DateTime(weekStart.year, weekStart.month, weekStart.day - 7 * k),
+    ];
+    final weekly = [
+      for (final ws in weeks)
+        ws == weekStart
+            ? _WeekAverage(FeedingTotals.of(finished(feedings)), avgDays)
+            : _WeekAverage(FeedingTotals.of(feedingsInWeek(store.feedings, ws)), 7),
+    ];
+    final thisWeek = weekly.last;
+    final lastWeek = weekly[weekly.length - 2];
+    final byDay = _trendRange == TrendRange.byDay;
+    final labels = byDay
+        ? WeekGrid.dayLabels
+        : [for (final ws in weeks) DateFormat('d\nMMM').format(ws)];
+
+    String ml(double v) => '${v.round()} ml';
+    String minutes(double v) => formatDuration(Duration(minutes: v.round()));
+
+    Widget chart(
+      String title,
+      Color color,
+      double Function(FeedingTotals t) measure,
+      String Function(double) format,
+    ) =>
+        WeeklyTrendChart(
+          title: title,
+          color: color,
+          labels: labels,
+          values: byDay
+              ? [for (var i = 0; i < elapsedDays; i++) measure(daily[i])]
+              : [for (final w in weekly) w.of(measure)],
+          average: thisWeek.of(measure),
+          previousAverage: lastWeek.isEmpty ? null : lastWeek.of(measure),
+          format: format,
+        );
 
     return [
       Text('Daily average', style: Theme.of(context).textTheme.titleMedium),
@@ -245,10 +316,45 @@ class _HomeScreenState extends State<HomeScreen> {
       TotalsRow(totals: avg),
       const SizedBox(height: 8),
       Text(
-        '~${avg.count} feedings per day',
+        '~${avg.count} feedings per day'
+        '${skipToday ? ' · today is counted once it ends' : ''}',
         style: const TextStyle(color: AppColors.muted),
       ),
+      const SizedBox(height: 24),
+      Text('Trends', style: Theme.of(context).textTheme.titleMedium),
+      const SizedBox(height: 8),
+      SizedBox(
+        width: double.infinity,
+        child: SegmentedButton<TrendRange>(
+          showSelectedIcon: false,
+          segments: const [
+            ButtonSegment(value: TrendRange.byDay, label: Text('This week by day')),
+            ButtonSegment(value: TrendRange.byWeek, label: Text('Last 8 weeks')),
+          ],
+          selected: {_trendRange},
+          onSelectionChanged: (s) => setState(() => _trendRange = s.first),
+        ),
+      ),
+      const SizedBox(height: 8),
+      Text(
+        byDay
+            ? 'Total for each day of this week. Tap a column to see its value.'
+            : 'Average per day for each week, labelled with the Monday it starts. '
+                'Tap a column to see its value.',
+        style: const TextStyle(color: AppColors.muted, fontSize: 13),
+      ),
+      const SizedBox(height: 16),
+      chart('Breastfeeding time per day', AppColors.breast,
+          (t) => t.breast.inSeconds / 60, minutes),
       const SizedBox(height: 20),
+      chart('Formula by bottle per day', AppColors.bottle,
+          (t) => t.bottleMl.toDouble(), ml),
+      const SizedBox(height: 20),
+      chart('Breast milk by bottle per day', AppColors.breastMilk,
+          (t) => t.breastMilkMl.toDouble(), ml),
+      const SizedBox(height: 28),
+      Text('Feeding times', style: Theme.of(context).textTheme.titleMedium),
+      const SizedBox(height: 8),
       WeekGrid(
         weekStart: weekStart,
         feedings: feedings,
@@ -265,10 +371,7 @@ class _HomeScreenState extends State<HomeScreen> {
       for (var i = 0; i < 7; i++)
         _DaySummaryRow(
           day: DateTime(weekStart.year, weekStart.month, weekStart.day + i),
-          totals: FeedingTotals.of(feedingsOnDay(
-            feedings,
-            DateTime(weekStart.year, weekStart.month, weekStart.day + i),
-          )),
+          totals: daily[i],
           onTap: () => setState(() {
             final day = DateTime(weekStart.year, weekStart.month, weekStart.day + i);
             _anchor = day.isAfter(_today) ? _today : day;
@@ -432,7 +535,7 @@ class _DaySummaryRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final details = <String>[
       if (totals.breast > Duration.zero) formatDuration(totals.breast),
-      if (totals.bottleMl > 0) '${totals.bottleMl} ml bottle',
+      if (totals.bottleMl > 0) '${totals.bottleMl} ml formula',
       if (totals.breastMilkMl > 0) '${totals.breastMilkMl} ml breast milk',
     ];
     return InkWell(
