@@ -6,8 +6,7 @@ import '../models/feeding.dart';
 import '../models/summary.dart';
 import '../theme.dart';
 import '../widgets/common.dart';
-import '../widgets/week_grid.dart';
-import '../widgets/weekly_trend_chart.dart';
+import '../widgets/trend_line_chart.dart';
 import 'add_feeding_screen.dart';
 
 enum OverviewMode { week, day }
@@ -37,7 +36,7 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  OverviewMode _mode = OverviewMode.week;
+  OverviewMode _mode = OverviewMode.day;
   TrendRange _trendRange = TrendRange.byDay;
   DateTime _anchor = dateOnly(DateTime.now());
 
@@ -223,8 +222,8 @@ class _HomeScreenState extends State<HomeScreen> {
             child: SegmentedButton<OverviewMode>(
               showSelectedIcon: false,
               segments: const [
-                ButtonSegment(value: OverviewMode.week, label: Text('Week')),
                 ButtonSegment(value: OverviewMode.day, label: Text('Day')),
+                ButtonSegment(value: OverviewMode.week, label: Text('Week')),
               ],
               selected: {_mode},
               onSelectionChanged: (s) => setState(() => _mode = s.first),
@@ -236,11 +235,13 @@ class _HomeScreenState extends State<HomeScreen> {
           Text(totalLabel, style: Theme.of(context).textTheme.titleMedium),
           const SizedBox(height: 8),
           TotalsRow(totals: totals),
-          const SizedBox(height: 8),
-          Text(
-            '${totals.count} feeding${totals.count == 1 ? '' : 's'}',
-            style: const TextStyle(color: AppColors.muted),
-          ),
+          if (!isWeek) ...[
+            const SizedBox(height: 8),
+            Text(
+              '${totals.count} feeding${totals.count == 1 ? '' : 's'}',
+              style: const TextStyle(color: AppColors.muted),
+            ),
+          ],
           const SizedBox(height: 20),
           if (isWeek)
             ..._buildWeek(weekStart, feedings)
@@ -285,96 +286,95 @@ class _HomeScreenState extends State<HomeScreen> {
     final thisWeek = weekly.last;
     final lastWeek = weekly[weekly.length - 2];
     final byDay = _trendRange == TrendRange.byDay;
+    const dayLabels = ['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su'];
     final labels = byDay
-        ? WeekGrid.dayLabels
+        ? dayLabels
         : [for (final ws in weeks) DateFormat('d\nMMM').format(ws)];
 
     String ml(double v) => '${v.round()} ml';
     String minutes(double v) => formatDuration(Duration(minutes: v.round()));
 
-    Widget chart(
-      String title,
-      Color color,
-      double Function(FeedingTotals t) measure,
-      String Function(double) format,
-    ) =>
-        WeeklyTrendChart(
-          title: title,
+    TrendSeries series(String name, Color color, double Function(FeedingTotals t) measure) =>
+        TrendSeries(
+          name: name,
           color: color,
-          labels: labels,
           values: byDay
               ? [for (var i = 0; i < elapsedDays; i++) measure(daily[i])]
               : [for (final w in weekly) w.of(measure)],
           average: thisWeek.of(measure),
           previousAverage: lastWeek.isEmpty ? null : lastWeek.of(measure),
-          format: format,
         );
 
+    String describe(int i) => byDay
+        ? DateFormat('EEEE d MMM').format(
+            DateTime(weekStart.year, weekStart.month, weekStart.day + i))
+        : 'Week of ${DateFormat('d MMM').format(weeks[i])}, average per day';
+
+    // Today's total is still growing, so the by-day view draws it as partial.
+    final partial = byDay && isCurrentWeek;
+
     return [
-      Text('Daily average', style: Theme.of(context).textTheme.titleMedium),
-      const SizedBox(height: 8),
-      TotalsRow(totals: avg),
-      const SizedBox(height: 8),
       Text(
-        '~${avg.count} feedings per day'
-        '${skipToday ? ' · today is counted once it ends' : ''}',
+        '${feedings.length} feedings · about ${avg.count} a day',
         style: const TextStyle(color: AppColors.muted),
       ),
       const SizedBox(height: 24),
-      Text('Trends', style: Theme.of(context).textTheme.titleMedium),
-      const SizedBox(height: 8),
-      SizedBox(
-        width: double.infinity,
-        child: SegmentedButton<TrendRange>(
-          showSelectedIcon: false,
-          segments: const [
-            ButtonSegment(value: TrendRange.byDay, label: Text('This week by day')),
-            ButtonSegment(value: TrendRange.byWeek, label: Text('Last 8 weeks')),
-          ],
-          selected: {_trendRange},
-          onSelectionChanged: (s) => setState(() => _trendRange = s.first),
-        ),
+      Row(
+        children: [
+          Expanded(
+            child: Text('Trends', style: Theme.of(context).textTheme.titleMedium),
+          ),
+          SegmentedButton<TrendRange>(
+            showSelectedIcon: false,
+            style: const ButtonStyle(visualDensity: VisualDensity.compact),
+            segments: const [
+              ButtonSegment(value: TrendRange.byDay, label: Text('This week')),
+              ButtonSegment(value: TrendRange.byWeek, label: Text('8 weeks')),
+            ],
+            selected: {_trendRange},
+            onSelectionChanged: (s) => setState(() => _trendRange = s.first),
+          ),
+        ],
       ),
-      const SizedBox(height: 8),
+      const SizedBox(height: 4),
       Text(
         byDay
-            ? 'Total for each day of this week. Tap a column to see its value.'
-            : 'Average per day for each week, labelled with the Monday it starts. '
-                'Tap a column to see its value.',
+            ? 'Total for each day. Today is dashed until it ends. Tap the chart to see a day.'
+            : 'Average per day for each week, starting Monday. Tap the chart to see a week.',
         style: const TextStyle(color: AppColors.muted, fontSize: 13),
       ),
       const SizedBox(height: 16),
-      chart('Breastfeeding time per day', AppColors.breast,
-          (t) => t.breast.inSeconds / 60, minutes),
-      const SizedBox(height: 20),
-      chart('Formula by bottle per day', AppColors.bottle,
-          (t) => t.bottleMl.toDouble(), ml),
-      const SizedBox(height: 20),
-      chart('Breast milk by bottle per day', AppColors.breastMilk,
-          (t) => t.breastMilkMl.toDouble(), ml),
-      const SizedBox(height: 28),
-      Text('Feeding times', style: Theme.of(context).textTheme.titleMedium),
-      const SizedBox(height: 8),
-      WeekGrid(
-        weekStart: weekStart,
-        feedings: feedings,
-        onDayTap: (day) => setState(() {
-          _anchor = day.isAfter(_today) ? _today : day;
-          _mode = OverviewMode.day;
-        }),
+      TrendLineChart(
+        title: 'Bottle feeding',
+        labels: labels,
+        format: ml,
+        lastPointPartial: partial,
+        describePoint: describe,
+        series: [
+          series('Formula', AppColors.bottle, (t) => t.bottleMl.toDouble()),
+          series('Breast milk', AppColors.breastMilk, (t) => t.breastMilkMl.toDouble()),
+        ],
       ),
-      const SizedBox(height: 12),
-      const _Legend(),
-      const SizedBox(height: 20),
+      const SizedBox(height: 24),
+      TrendLineChart(
+        title: 'Breastfeeding',
+        labels: labels,
+        format: minutes,
+        lastPointPartial: partial,
+        describePoint: describe,
+        series: [
+          series('Time at the breast', AppColors.breast, (t) => t.breast.inSeconds / 60),
+        ],
+      ),
+      const SizedBox(height: 24),
       Text('By day', style: Theme.of(context).textTheme.titleMedium),
       const SizedBox(height: 4),
-      for (var i = 0; i < 7; i++)
+      for (var i = elapsedDays - 1; i >= 0; i--)
         _DaySummaryRow(
           day: DateTime(weekStart.year, weekStart.month, weekStart.day + i),
           totals: daily[i],
           onTap: () => setState(() {
-            final day = DateTime(weekStart.year, weekStart.month, weekStart.day + i);
-            _anchor = day.isAfter(_today) ? _today : day;
+            _anchor = DateTime(weekStart.year, weekStart.month, weekStart.day + i);
             _mode = OverviewMode.day;
           }),
         ),
@@ -486,36 +486,6 @@ class _LastFeedingBanner extends StatelessWidget {
         borderRadius: BorderRadius.circular(14),
       ),
       child: Text(text, style: const TextStyle(fontSize: 15)),
-    );
-  }
-}
-
-class _Legend extends StatelessWidget {
-  const _Legend();
-
-  @override
-  Widget build(BuildContext context) {
-    return Wrap(
-      spacing: 16,
-      runSpacing: 6,
-      children: [
-        for (final type in FeedingType.values)
-          Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                width: 12,
-                height: 12,
-                decoration: BoxDecoration(
-                  color: AppColors.forType(type),
-                  borderRadius: BorderRadius.circular(3),
-                ),
-              ),
-              const SizedBox(width: 6),
-              Text(type.shortLabel, style: const TextStyle(fontSize: 13)),
-            ],
-          ),
-      ],
     );
   }
 }

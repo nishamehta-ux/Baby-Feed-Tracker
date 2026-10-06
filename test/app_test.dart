@@ -39,7 +39,12 @@ void main() {
     expect(store.feedings, hasLength(1));
     expect(store.feedings.single.type, FeedingType.bottle);
     expect(find.text('Formula: 40 ml'), findsWidgets);
-    expect(find.text('Formula by bottle per day'), findsOneWidget);
+
+    await tester.tap(find.text('Week'));
+    await tester.pumpAndSettle();
+    expect(find.text('Bottle feeding'), findsOneWidget);
+    expect(find.text('Breastfeeding'), findsOneWidget);
+    expect(find.text('Formula: 40 ml'), findsWidgets);
   });
 
   testWidgets('bottle tab can log expressed breast milk', (tester) async {
