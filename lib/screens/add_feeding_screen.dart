@@ -288,7 +288,7 @@ class _AddFeedingScreenState extends State<AddFeedingScreen> {
       body: SingleChildScrollView(
         child: Stack(
           children: [
-            const PurpleHeaderBackground(height: 320),
+            const HeaderBackground(height: 320),
             SafeArea(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -498,7 +498,11 @@ class _AddFeedingScreenState extends State<AddFeedingScreen> {
         ],
       ),
       const SizedBox(height: 24),
-      BottleGauge(amountMl: _amountMl, onChanged: setAmount),
+      BottleGauge(
+        amountMl: _amountMl,
+        onChanged: setAmount,
+        fillColor: AppColors.forType(_type),
+      ),
       const SizedBox(height: 24),
       const Text('Amount', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
       const SizedBox(height: 8),

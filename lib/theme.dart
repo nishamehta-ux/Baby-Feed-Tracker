@@ -2,24 +2,44 @@ import 'package:flutter/material.dart';
 
 import 'models/feeding.dart';
 
+/// Anica palette: 413C58 · A3C4BC · BFD7B5 · E7EFC5 · F2DDA4.
 class AppColors {
-  static const primary = Color(0xFF7F57D1);
-  static const ink = Color(0xFF2B2A5A);
-  static const muted = Color(0xFF6E6C8A);
-  static const background = Color(0xFFF0F0F5);
-  static const field = Color(0xFFF1F1F3);
-  static const soft = Color(0xFFF0ECFA);
-  static const softBorder = Color(0xFFDCD2F3);
-  static const banner = Color(0xFFE2DAF5);
+  static const indigo = Color(0xFF413C58);
+  static const sage = Color(0xFFA3C4BC);
+  static const mint = Color(0xFFBFD7B5);
+  static const cream = Color(0xFFE7EFC5);
+  static const sand = Color(0xFFF2DDA4);
 
-  static const breast = Color(0xFF3F2C6E);
-  static const bottle = Color(0xFF7F57D1);
-  static const breastMilk = Color(0xFF1F9E8F);
+  static const primary = indigo;
+  static const ink = indigo;
+  static const muted = Color(0xFF6F6A85);
+  static const background = Color(0xFFF6F8EC);
+  static const field = Color(0xFFF3F5EA);
+  static const soft = cream;
+  static const softBorder = mint;
+  static const banner = cream;
+
+  // Feeding types: fills use the palette as is.
+  static const breast = indigo;
+  static const bottle = sand;
+  static const breastMilk = sage;
 
   static Color forType(FeedingType type) => switch (type) {
         FeedingType.breast => breast,
         FeedingType.bottle => bottle,
         FeedingType.breastMilk => breastMilk,
+      };
+
+  /// Text and icons placed on a [forType] fill.
+  static Color onType(FeedingType type) =>
+      type == FeedingType.breast ? Colors.white : ink;
+
+  /// Deeper steps of the same hues for thin lines, which the pale fills are
+  /// too light for on white.
+  static Color lineForType(FeedingType type) => switch (type) {
+        FeedingType.breast => indigo,
+        FeedingType.bottle => const Color(0xFFA87A28),
+        FeedingType.breastMilk => const Color(0xFF4F8A7D),
       };
 }
 
@@ -31,6 +51,7 @@ ThemeData buildTheme() {
   );
   return ThemeData(
     colorScheme: scheme,
+    fontFamily: 'Nunito',
     scaffoldBackgroundColor: AppColors.background,
     useMaterial3: true,
     textTheme: const TextTheme(

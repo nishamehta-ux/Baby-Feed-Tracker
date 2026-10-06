@@ -46,7 +46,7 @@ class _MainShellState extends State<MainShell> {
       bottomNavigationBar: NavigationBar(
         selectedIndex: _tab,
         backgroundColor: Colors.white,
-        indicatorColor: AppColors.banner,
+        indicatorColor: AppColors.mint,
         onDestinationSelected: (i) {
           // Coming back to Today from the tab bar shows today again.
           if (i == 0 && _tab != 0) _day.value = dateOnly(DateTime.now());

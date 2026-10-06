@@ -7,6 +7,7 @@ import '../data/feeding_store.dart';
 import '../models/feeding.dart';
 import '../models/summary.dart';
 import '../theme.dart';
+import '../widgets/anica_logo.dart';
 import '../widgets/common.dart';
 
 /// Weekly summary: the average per day for each feeding type, how it compares
@@ -59,13 +60,15 @@ class _WeekScreenState extends State<WeekScreen> {
       builder: (context, _) => SingleChildScrollView(
         child: Stack(
           children: [
-            const PurpleHeaderBackground(height: 300),
+            const HeaderBackground(height: 340),
             SafeArea(
               child: Padding(
                 padding: const EdgeInsets.fromLTRB(20, 24, 20, 32),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    const AnicaLogo(),
+                    const SizedBox(height: 20),
                     Text(
                       'Weekly summary',
                       style: Theme.of(context).textTheme.headlineMedium,
@@ -239,7 +242,7 @@ class _AverageRow extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 8),
-          _Sparkline(values: trend, color: AppColors.forType(type)),
+          _Sparkline(values: trend, color: AppColors.lineForType(type)),
         ],
       ),
     );

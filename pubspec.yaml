@@ -1,5 +1,5 @@
 name: baby_feed_tracker
-description: A simple baby feeding tracker for breastfeeding, bottle feeding and expressed breast milk.
+description: Anica, a simple baby feeding tracker for breastfeeding and bottle feeding (formula or breast milk).
 publish_to: 'none'
 version: 0.1.0+1
 
@@ -16,6 +16,20 @@ dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^5.0.0
+  flutter_launcher_icons: ^0.14.4
+
+# Regenerate with: dart run flutter_launcher_icons
+flutter_launcher_icons:
+  android: true
+  ios: true
+  image_path: assets/branding/anica_app_icon.png
+  adaptive_icon_background: "#413C58"
+  adaptive_icon_foreground: assets/branding/anica_mark_foreground.png
+  remove_alpha_ios: true
 
 flutter:
   uses-material-design: true
+  fonts:
+    - family: Nunito
+      fonts:
+        - asset: assets/fonts/Nunito.ttf

@@ -5,6 +5,7 @@ import '../data/feeding_store.dart';
 import '../models/feeding.dart';
 import '../models/summary.dart';
 import '../theme.dart';
+import '../widgets/anica_logo.dart';
 import '../widgets/common.dart';
 import 'add_feeding_screen.dart';
 
@@ -88,15 +89,17 @@ class _TodayScreenState extends State<TodayScreen> {
       builder: (context, _) => SingleChildScrollView(
         child: Stack(
           children: [
-            const PurpleHeaderBackground(height: 440),
+            const HeaderBackground(height: 480),
             SafeArea(
               child: Padding(
                 padding: const EdgeInsets.fromLTRB(20, 24, 20, 32),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    const AnicaLogo(),
+                    const SizedBox(height: 20),
                     _buildHeader(context),
-                    const SizedBox(height: 28),
+                    const SizedBox(height: 24),
                     _AddFeedingButton(onTap: () => _openEditor()),
                     const SizedBox(height: 18),
                     _buildOverview(context),

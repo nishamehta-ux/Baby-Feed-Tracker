@@ -9,9 +9,11 @@ class BottleGauge extends StatelessWidget {
     super.key,
     required this.amountMl,
     required this.onChanged,
+    this.fillColor = AppColors.cream,
     this.maxMl = 250,
   });
 
+  final Color fillColor;
   final int amountMl;
   final int maxMl;
   final ValueChanged<int> onChanged;
@@ -35,7 +37,7 @@ class BottleGauge extends StatelessWidget {
           width: 200,
           height: _height,
           child: CustomPaint(
-            painter: _BottlePainter(amountMl: amountMl, maxMl: maxMl),
+            painter: _BottlePainter(amountMl: amountMl, maxMl: maxMl, fillColor: fillColor),
           ),
         ),
       ),
@@ -54,8 +56,9 @@ class _BottleGeometry {
 }
 
 class _BottlePainter extends CustomPainter {
-  _BottlePainter({required this.amountMl, required this.maxMl});
+  _BottlePainter({required this.amountMl, required this.maxMl, required this.fillColor});
 
+  final Color fillColor;
   final int amountMl;
   final int maxMl;
 
@@ -87,7 +90,7 @@ class _BottlePainter extends CustomPainter {
     canvas.clipPath(closed);
     canvas.drawRect(
       Rect.fromLTRB(0, level, size.width, size.height),
-      Paint()..color = AppColors.banner,
+      Paint()..color = fillColor,
     );
     canvas.drawLine(
       Offset(0, level),
@@ -135,5 +138,5 @@ class _BottlePainter extends CustomPainter {
 
   @override
   bool shouldRepaint(_BottlePainter old) =>
-      old.amountMl != amountMl || old.maxMl != maxMl;
+      old.amountMl != amountMl || old.maxMl != maxMl || old.fillColor != fillColor;
 }

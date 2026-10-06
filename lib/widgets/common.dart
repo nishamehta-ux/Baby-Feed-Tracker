@@ -27,9 +27,9 @@ class AppCard extends StatelessWidget {
   }
 }
 
-/// Purple background with a gently curved bottom edge, as in the design.
-class PurpleHeaderBackground extends StatelessWidget {
-  const PurpleHeaderBackground({super.key, required this.height});
+/// Indigo background with a gently curved bottom edge, as in the design.
+class HeaderBackground extends StatelessWidget {
+  const HeaderBackground({super.key, required this.height});
 
   final double height;
 
@@ -55,9 +55,9 @@ class _CurveClipper extends CustomClipper<Path> {
 }
 
 class TotalChip extends StatelessWidget {
-  const TotalChip({super.key, required this.color, required this.label});
+  const TotalChip({super.key, required this.type, required this.label});
 
-  final Color color;
+  final FeedingType type;
   final String label;
 
   @override
@@ -65,12 +65,16 @@ class TotalChip extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
-        color: color,
+        color: AppColors.forType(type),
         borderRadius: BorderRadius.circular(8),
       ),
       child: Text(
         label,
-        style: const TextStyle(color: Colors.white, fontSize: 15),
+        style: TextStyle(
+          color: AppColors.onType(type),
+          fontSize: 15,
+          fontWeight: FontWeight.w600,
+        ),
       ),
     );
   }
@@ -88,15 +92,15 @@ class TotalsRow extends StatelessWidget {
       runSpacing: 8,
       children: [
         TotalChip(
-          color: AppColors.breast,
+          type: FeedingType.breast,
           label: 'Breastfeeding: ${formatDuration(totals.breast)}',
         ),
         TotalChip(
-          color: AppColors.bottle,
+          type: FeedingType.bottle,
           label: 'Formula: ${totals.bottleMl} ml',
         ),
         TotalChip(
-          color: AppColors.breastMilk,
+          type: FeedingType.breastMilk,
           label: 'Breast milk: ${totals.breastMilkMl} ml',
         ),
       ],
@@ -124,7 +128,7 @@ class FeedingTypeIcon extends StatelessWidget {
         color: AppColors.forType(type),
         borderRadius: BorderRadius.circular(12),
       ),
-      child: Icon(icon, color: Colors.white, size: size * 0.5),
+      child: Icon(icon, color: AppColors.onType(type), size: size * 0.5),
     );
   }
 }
