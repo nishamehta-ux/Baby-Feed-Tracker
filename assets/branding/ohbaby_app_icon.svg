@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <title>Oh baby baby! app icon</title>
+  <rect width="1024" height="1024" fill="#413C58"/>
+  <g transform="translate(212 182) scale(6)">
+  <path d="M47 23C40 15 46 6 54 9C60 11 59 19 53 19" fill="none" stroke="#F2DDA4" stroke-width="5" stroke-linecap="round"/>
+  <circle cx="50" cy="57" r="35" fill="#F2DDA4"/>
+  <path d="M33 55Q39 62 45 55M55 55Q61 62 67 55" fill="none" stroke="#413C58" stroke-width="4" stroke-linecap="round"/>
+  <ellipse cx="50" cy="71" rx="5" ry="6" fill="#413C58"/>
+  <circle cx="30" cy="66" r="5" fill="#E7EFC5"/>
+  <circle cx="70" cy="66" r="5" fill="#E7EFC5"/>
+  </g>
+</svg>

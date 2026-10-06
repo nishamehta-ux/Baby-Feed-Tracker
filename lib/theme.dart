@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'models/feeding.dart';
 
-/// Anica palette: 413C58 · A3C4BC · BFD7B5 · E7EFC5 · F2DDA4.
+/// App palette: 413C58 · A3C4BC · BFD7B5 · E7EFC5 · F2DDA4.
 class AppColors {
   static const indigo = Color(0xFF413C58);
   static const sage = Color(0xFFA3C4BC);

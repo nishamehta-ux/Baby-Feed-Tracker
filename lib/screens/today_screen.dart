@@ -5,7 +5,7 @@ import '../data/feeding_store.dart';
 import '../models/feeding.dart';
 import '../models/summary.dart';
 import '../theme.dart';
-import '../widgets/anica_logo.dart';
+import '../widgets/app_logo.dart';
 import '../widgets/common.dart';
 import 'add_feeding_screen.dart';
 
@@ -96,7 +96,7 @@ class _TodayScreenState extends State<TodayScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const AnicaLogo(),
+                    const AppLogo(),
                     const SizedBox(height: 20),
                     _buildHeader(context),
                     const SizedBox(height: 24),

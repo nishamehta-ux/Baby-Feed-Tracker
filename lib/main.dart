@@ -19,7 +19,7 @@ class BabyFeedTrackerApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Anica',
+      title: 'Oh baby baby!',
       debugShowCheckedModeBanner: false,
       theme: buildTheme(),
       home: MainShell(store: store),

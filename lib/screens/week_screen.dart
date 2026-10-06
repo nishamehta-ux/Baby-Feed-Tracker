@@ -7,7 +7,7 @@ import '../data/feeding_store.dart';
 import '../models/feeding.dart';
 import '../models/summary.dart';
 import '../theme.dart';
-import '../widgets/anica_logo.dart';
+import '../widgets/app_logo.dart';
 import '../widgets/common.dart';
 
 /// Weekly summary: the average per day for each feeding type, how it compares
@@ -67,7 +67,7 @@ class _WeekScreenState extends State<WeekScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const AnicaLogo(),
+                    const AppLogo(),
                     const SizedBox(height: 20),
                     Text(
                       'Weekly summary',

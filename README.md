@@ -1,6 +1,6 @@
-<p align="center"><img src="assets/branding/anica_logo.png" alt="Anica" width="360"></p>
+<p align="center"><img src="assets/branding/ohbaby_logo.png" alt="Oh baby baby!" width="420"></p>
 
-# Anica
+# Oh baby baby!
 
 A simple Flutter app for logging a baby's feedings and seeing daily and weekly summaries.
 
@@ -19,7 +19,7 @@ A simple Flutter app for logging a baby's feedings and seeing daily and weekly s
 ## Brand
 
 - **Palette**: `#413C58` indigo · `#A3C4BC` sage · `#BFD7B5` mint · `#E7EFC5` cream · `#F2DDA4` sand. Breastfeeding is indigo, formula is sand and breast milk is sage. Thin chart lines use deeper steps of sand and sage so they stay visible on white.
-- **Logo**: a drop of milk with a heart, in `assets/branding/` (SVG and PNG). App icons are generated from `anica_app_icon.png` with `dart run flutter_launcher_icons`.
+- **Logo**: a sleepy baby face with a curl of hair and a little "oh" mouth, in `assets/branding/` (SVG and PNG). App icons are generated from `ohbaby_app_icon.png` with `dart run flutter_launcher_icons`.
 - **Typeface**: [Nunito](https://github.com/googlefonts/nunito), bundled under the SIL Open Font License (`assets/fonts/OFL.txt`).
 
 ## Run
