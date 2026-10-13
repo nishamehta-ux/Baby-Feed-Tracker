@@ -84,7 +84,7 @@ class QuickActions extends StatelessWidget {
       clipBehavior: Clip.none,
       child: Row(
         children: [
-          for (final t in tiles) ...[t, const SizedBox(width: 10)],
+          for (final t in tiles) ...[t, const SizedBox(width: 8)],
         ],
       ),
     );
@@ -111,29 +111,35 @@ class _Tile extends StatelessWidget {
       label: '$title, $subtitle',
       child: Material(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(AppRadius.tile),
         child: InkWell(
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(AppRadius.tile),
           onTap: onTap,
-          child: Container(
-            width: 116,
-            padding: const EdgeInsets.fromLTRB(12, 12, 12, 12),
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(10, 10, 16, 10),
             child: ExcludeSemantics(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
                 children: [
                   EntryIcon(type: type, size: EntryIcon.medium),
-                  const SizedBox(height: 10),
-                  Text(
-                    title,
-                    style: const TextStyle(
-                        fontWeight: FontWeight.w700, fontSize: AppText.body, color: AppColors.ink),
-                  ),
-                  Text(
-                    subtitle,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(fontSize: AppText.label, color: AppColors.muted),
+                  const SizedBox(width: 10),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        title,
+                        style: const TextStyle(
+                          fontWeight: FontWeight.w700,
+                          fontSize: AppText.body,
+                          color: AppColors.ink,
+                        ),
+                      ),
+                      Text(
+                        subtitle,
+                        style: const TextStyle(fontSize: AppText.label, color: AppColors.muted),
+                      ),
+                    ],
                   ),
                 ],
               ),
@@ -212,7 +218,11 @@ class _LiveTimerCardState extends State<LiveTimerCard> {
 
     return Container(
       padding: const EdgeInsets.fromLTRB(20, 14, 12, 20),
-      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(22)),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(AppRadius.card),
+        boxShadow: raisedShadow,
+      ),
       child: Column(
         children: [
           // Header: what is being timed, and a way out.

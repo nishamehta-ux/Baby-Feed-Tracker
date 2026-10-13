@@ -130,8 +130,8 @@ class _TrendsScreenState extends State<TrendsScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const AppLogo(),
-                    const SizedBox(height: 20),
+                    const AppLogo(height: 22),
+                    const SizedBox(height: 16),
                     Text('Trends', style: Theme.of(context).textTheme.headlineMedium),
                     const SizedBox(height: 16),
                     SegmentedButton<Period>(

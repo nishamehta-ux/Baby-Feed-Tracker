@@ -261,6 +261,9 @@ void main() {
   testWidgets('quick add logs a diaper at once, with undo', (tester) async {
     final store = await _startApp(tester);
 
+    // The quick-add row scrolls sideways; bring the tile into view first.
+    await tester.ensureVisible(find.text('Wet'));
+    await tester.pumpAndSettle();
     await tester.tap(find.text('Wet'));
     await tester.pump();
     expect(store.entries.single.diaper, DiaperKind.wet);

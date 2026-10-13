@@ -75,6 +75,19 @@ class AppColors {
       };
 }
 
+/// Corner radii: cards, then tiles inside or beside them. Chips and buttons
+/// are full pills and entry icons are circles.
+class AppRadius {
+  static const card = 20.0;
+  static const tile = 16.0;
+}
+
+/// Soft shadow for the one card on a screen that should stand out (the live
+/// timer); everything else sits flat.
+const raisedShadow = [
+  BoxShadow(color: Color(0x1F263241), blurRadius: 24, offset: Offset(0, 8)),
+];
+
 /// The type scale. Every text size in the app comes from here, so the
 /// levels stay distinct: headline > title > subtitle > body > label > caption.
 class AppText {

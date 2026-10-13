@@ -91,36 +91,29 @@ class _TodayScreenState extends State<TodayScreen> {
         child: Column(
           children: [
             HeaderPanel(
-              padding: EdgeInsets.fromLTRB(20, MediaQuery.of(context).padding.top + 24, 20, 72),
+              padding: EdgeInsets.fromLTRB(20, MediaQuery.of(context).padding.top + 20, 20, 24),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const AppLogo(),
-                  const SizedBox(height: 20),
+                  const AppLogo(height: 22),
+                  const SizedBox(height: 16),
                   _buildHeader(context),
                   const SizedBox(height: 24),
                   if (store.live != null) ...[
                     LiveTimerCard(store: store, onFinish: _finishLive),
-                    const SizedBox(height: 16),
+                    const SizedBox(height: 28),
                   ],
-                  const Text(
-                    'Quick add',
-                    style: TextStyle(color: AppColors.ink, fontWeight: FontWeight.w700),
-                  ),
-                  const SizedBox(height: 8),
+                  const SectionLabel('Quick add'),
+                  const SizedBox(height: 10),
                   QuickActions(store: store, onLogged: _offerUndoLogged),
                 ],
               ),
             ),
-            // The day card overlaps the bottom of the header.
-            Transform.translate(
-              offset: const Offset(0, -48),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                child: _buildOverview(context),
-              ),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: _buildOverview(context),
             ),
-            const SizedBox(height: 40),
+            const SizedBox(height: 96), // room for the floating button
           ],
         ),
       ),
@@ -387,15 +380,15 @@ class _SummaryChip extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       width: width,
-      padding: const EdgeInsets.fromLTRB(4, 4, 10, 4),
+      padding: const EdgeInsets.fromLTRB(12, 10, 10, 10),
       decoration: BoxDecoration(
         color: AppColors.field,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(999),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          EntryIcon(type: type, size: EntryIcon.small),
+          Icon(iconForType(type), size: 18, color: AppColors.lineForType(type)),
           const SizedBox(width: 8),
           Flexible(
             child: FittedBox(
@@ -448,7 +441,8 @@ class _TimelineTile extends StatelessWidget {
                     Text(
                       hm.format(e.start),
                       style: const TextStyle(
-                        fontWeight: FontWeight.w700,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.muted,
                         fontFeatures: [FontFeature.tabularFigures()],
                       ),
                     ),
@@ -475,8 +469,8 @@ class _TimelineTile extends StatelessWidget {
                     child: Center(child: Container(width: 2, color: AppColors.divider)),
                   ),
                   Padding(
-                    padding: const EdgeInsets.only(top: 8),
-                    child: EntryIcon(type: e.type, icon: iconForEntry(e), size: EntryIcon.medium),
+                    padding: const EdgeInsets.only(top: 10),
+                    child: EntryIcon(type: e.type, icon: iconForEntry(e), size: EntryIcon.small),
                   ),
                 ],
               ),

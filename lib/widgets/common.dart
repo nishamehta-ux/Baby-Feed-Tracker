@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import '../models/entry.dart';
 import '../theme.dart';
 
-/// White rounded card that sits on top of the header.
+/// White rounded card on the page. Flat: only the live timer is raised.
 class AppCard extends StatelessWidget {
   const AppCard({super.key, required this.child});
 
@@ -16,10 +16,7 @@ class AppCard extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(24, 28, 24, 24),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(22),
-        boxShadow: const [
-          BoxShadow(color: Color(0x14000000), blurRadius: 16, offset: Offset(0, 4)),
-        ],
+        borderRadius: BorderRadius.circular(AppRadius.card),
       ),
       child: child,
     );
@@ -86,7 +83,7 @@ IconData iconForType(EntryType type) => switch (type) {
       EntryType.other => Icons.edit_note_rounded,
     };
 
-/// A rounded tile in the entry's colour with its icon. [icon] overrides the
+/// A circle in the entry's colour with its icon. [icon] overrides the
 /// type's own icon, e.g. a bath tub for a Bath routine.
 class EntryIcon extends StatelessWidget {
   const EntryIcon({super.key, required this.type, this.size = medium, this.icon});
@@ -113,7 +110,7 @@ class EntryIcon extends StatelessWidget {
       height: size,
       decoration: BoxDecoration(
         color: AppColors.forType(type),
-        borderRadius: BorderRadius.circular(size * 0.3),
+        shape: BoxShape.circle,
         border: AppColors.outlined(type) ? Border.all(color: AppColors.ink, width: 1.25) : null,
       ),
       child: Icon(glyph, color: AppColors.onType(type), size: size * 0.5 * opticalScale(glyph)),
@@ -144,6 +141,26 @@ class RoundIconButton extends StatelessWidget {
         disabledBackgroundColor: AppColors.field.withValues(alpha: 0.5),
         foregroundColor: AppColors.ink,
         disabledForegroundColor: AppColors.muted.withValues(alpha: 0.5),
+      ),
+    );
+  }
+}
+
+/// A small heading for a section on the page, e.g. "Quick add".
+class SectionLabel extends StatelessWidget {
+  const SectionLabel(this.text, {super.key});
+
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    return Text(
+      text.toUpperCase(),
+      style: const TextStyle(
+        fontSize: AppText.label,
+        fontWeight: FontWeight.w700,
+        letterSpacing: 0.8,
+        color: AppColors.muted,
       ),
     );
   }
