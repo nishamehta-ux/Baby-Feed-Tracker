@@ -396,16 +396,19 @@ class _TrendsScreenState extends State<TrendsScreen> {
           ],
           const SizedBox(height: 24),
           Text('Each day', style: Theme.of(context).textTheme.titleMedium),
-          const SizedBox(height: 4),
-          for (var i = elapsed - 1; i >= 0; i--)
-            _DayRow(
-              day: DateTime(start.year, start.month, start.day + i),
-              totals: Totals.of(
-                entriesOnDay(
-                    widget.store.entries, DateTime(start.year, start.month, start.day + i)),
-              ),
-              onTap: () => widget.onOpenDay(DateTime(start.year, start.month, start.day + i)),
-            ),
+          const Text(
+            'The lines compare each day with the busiest one. Tap a day to open it.',
+            style: TextStyle(color: AppColors.muted, fontSize: AppText.label),
+          ),
+          const SizedBox(height: 12),
+          _DayTable(
+            days: [
+              for (var i = elapsed - 1; i >= 0; i--)
+                DateTime(start.year, start.month, start.day + i),
+            ],
+            totalsFor: (day) => Totals.of(entriesOnDay(widget.store.entries, day)),
+            onTap: widget.onOpenDay,
+          ),
         ],
       ),
     );
@@ -478,8 +481,13 @@ class _TrendRow extends StatelessWidget {
                 children: [
                   Text(name,
                       style: const TextStyle(color: AppColors.muted, fontSize: AppText.label)),
-                  Text(value,
-                      style: const TextStyle(fontSize: AppText.title, fontWeight: FontWeight.w800)),
+                  FittedBox(
+                    fit: BoxFit.scaleDown,
+                    alignment: Alignment.centerLeft,
+                    child: Text(value,
+                        style:
+                            const TextStyle(fontSize: AppText.title, fontWeight: FontWeight.w800)),
+                  ),
                   Text(detail,
                       style: const TextStyle(color: AppColors.muted, fontSize: AppText.label)),
                 ],
@@ -497,45 +505,176 @@ class _TrendRow extends StatelessWidget {
   }
 }
 
-class _DayRow extends StatelessWidget {
-  const _DayRow({required this.day, required this.totals, required this.onTap});
+/// The days of the period as a table: one column per thing tracked, with a
+/// soft bar behind each value scaled to the period's highest, so busy and
+/// quiet days stand out at a glance.
+class _DayTable extends StatelessWidget {
+  const _DayTable({required this.days, required this.totalsFor, required this.onTap});
 
-  final DateTime day;
-  final Totals totals;
-  final VoidCallback onTap;
+  /// Newest first.
+  final List<DateTime> days;
+  final Totals Function(DateTime day) totalsFor;
+  final ValueChanged<DateTime> onTap;
+
+  static const _columns = [
+    (EntryType.breast, 'Breast'),
+    (EntryType.bottle, 'Bottle ml'),
+    (EntryType.pump, 'Pumped ml'),
+    (EntryType.diaper, 'Diapers'),
+  ];
+
+  static num _value(EntryType type, Totals t) => switch (type) {
+        EntryType.breast => t.breast.inMinutes,
+        EntryType.pump => t.pumpMl,
+        EntryType.diaper => t.diaperCount,
+        _ => t.totalMl,
+      };
+
+  static String _format(EntryType type, num v) {
+    if (type != EntryType.breast) return '$v';
+    final h = v ~/ 60, m = v % 60;
+    return h == 0 ? '${m}m' : (m == 0 ? '${h}h' : '${h}h ${m}m');
+  }
 
   @override
   Widget build(BuildContext context) {
-    final details = <String>[
-      if (totals.breast > Duration.zero) formatDuration(totals.breast),
-      if (totals.bottleMl > 0) '${totals.bottleMl} ml formula',
-      if (totals.breastMilkMl > 0) '${totals.breastMilkMl} ml breast milk',
-      if (totals.pumpMl > 0) '${totals.pumpMl} ml pumped',
-      if (totals.diaperCount > 0)
-        '${totals.diaperCount} diaper${totals.diaperCount == 1 ? '' : 's'}',
+    final totals = [for (final d in days) totalsFor(d)];
+    final maxes = [
+      for (final c in _columns)
+        totals.fold<num>(0, (m, t) => _value(c.$1, t) > m ? _value(c.$1, t) : m),
     ];
-    return InkWell(
-      onTap: onTap,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 10),
-        child: Row(
-          children: [
-            SizedBox(
-              width: 92,
-              child: Text(
-                DateFormat('EEE d MMM').format(day),
-                style: const TextStyle(fontWeight: FontWeight.w700),
-              ),
-            ),
-            Expanded(
-              child: Text(
-                details.isEmpty ? 'Nothing logged' : details.join(' · '),
-                style: const TextStyle(color: AppColors.muted),
-              ),
-            ),
-            const Icon(Icons.chevron_right_rounded, color: AppColors.muted, size: 20),
-          ],
+    final today = dateOnly(DateTime.now());
+
+    return Column(
+      children: [
+        // Header: the group's icon over a short name and unit.
+        Padding(
+          padding: const EdgeInsets.only(bottom: 6),
+          child: Row(
+            children: [
+              const SizedBox(width: _dayWidth),
+              for (final c in _columns)
+                Expanded(
+                  child: Column(
+                    children: [
+                      Icon(iconForType(c.$1), size: 18, color: AppColors.lineForType(c.$1)),
+                      const SizedBox(height: 2),
+                      FittedBox(
+                        fit: BoxFit.scaleDown,
+                        child: Text(
+                          c.$2,
+                          style: const TextStyle(
+                            fontSize: AppText.caption,
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.muted,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+            ],
+          ),
         ),
+        for (var i = 0; i < days.length; i++)
+          InkWell(
+            key: ValueKey('day-${days[i].year}-${days[i].month}-${days[i].day}'),
+            onTap: () => onTap(days[i]),
+            borderRadius: BorderRadius.circular(10),
+            child: Container(
+              decoration: const BoxDecoration(
+                border: Border(top: BorderSide(color: AppColors.divider)),
+              ),
+              padding: const EdgeInsets.symmetric(vertical: 10),
+              child: Row(
+                children: [
+                  SizedBox(
+                    width: _dayWidth,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          days[i] == today ? 'Today' : DateFormat('EEE').format(days[i]),
+                          style: const TextStyle(fontSize: AppText.caption, color: AppColors.muted),
+                        ),
+                        Text(
+                          DateFormat('d MMM').format(days[i]),
+                          style: const TextStyle(
+                            fontSize: AppText.label,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  for (var c = 0; c < _columns.length; c++)
+                    Expanded(
+                      child: _BarCell(
+                        type: _columns[c].$1,
+                        value: _value(_columns[c].$1, totals[i]),
+                        max: maxes[c],
+                        text: _format(_columns[c].$1, _value(_columns[c].$1, totals[i])),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+          ),
+      ],
+    );
+  }
+
+  static const _dayWidth = 58.0;
+}
+
+/// A value with a thin bar under it, as long as its share of [max].
+class _BarCell extends StatelessWidget {
+  const _BarCell({required this.type, required this.value, required this.max, required this.text});
+
+  final EntryType type;
+  final num value;
+  final num max;
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    final share = max <= 0 ? 0.0 : (value / max).clamp(0.0, 1.0).toDouble();
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 6),
+      child: Column(
+        children: [
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Text(
+              value == 0 ? '–' : text,
+              style: TextStyle(
+                fontSize: AppText.body,
+                fontWeight: FontWeight.w600,
+                color: value == 0 ? AppColors.muted : AppColors.ink,
+                fontFeatures: const [FontFeature.tabularFigures()],
+              ),
+            ),
+          ),
+          const SizedBox(height: 4),
+          Container(
+            height: 4,
+            decoration: BoxDecoration(
+              color: AppColors.field,
+              borderRadius: BorderRadius.circular(2),
+            ),
+            alignment: Alignment.centerLeft,
+            child: FractionallySizedBox(
+              widthFactor: share,
+              heightFactor: 1,
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  color: AppColors.lineForType(type),
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

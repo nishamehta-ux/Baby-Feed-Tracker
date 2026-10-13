@@ -71,7 +71,9 @@ void main() {
     await tester.tap(find.text('Trends'));
     await tester.pumpAndSettle();
     expect(find.text('Average per day'), findsOneWidget);
-    final dayRow = find.textContaining('30 ml formula · 30 ml breast milk');
+    final now = DateTime.now();
+    final dayRow = find.byKey(ValueKey('day-${now.year}-${now.month}-${now.day}'));
+    expect(find.descendant(of: dayRow, matching: find.text('60')), findsOneWidget);
     await tester.ensureVisible(dayRow);
     await tester.pumpAndSettle();
     await tester.tap(dayRow);
