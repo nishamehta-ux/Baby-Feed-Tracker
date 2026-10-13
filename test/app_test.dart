@@ -45,6 +45,7 @@ void main() {
     expect(store.entries.single.type, EntryType.bottle);
     expect(find.text('Bottle feeding'), findsOneWidget);
     expect(find.text('30 ml formula'), findsOneWidget);
+    expect(find.text('Bottle 30 ml'), findsOneWidget); // quick-add repeats it
 
     // Breast milk, reusing the last amount.
     await _openAdd(tester, 'Bottle feeding');
@@ -123,8 +124,9 @@ void main() {
     await tester.tap(find.text('Save'));
     await tester.pump();
     expect(find.text('Choose wet, dirty or dry.'), findsOneWidget);
-    await tester.tap(find.text('Wet'));
-    await tester.tap(find.text('Dirty'));
+    // The quick-add tiles behind the drawer also say Wet and Dirty.
+    await tester.tap(find.text('Wet').last);
+    await tester.tap(find.text('Dirty').last);
     await tester.tap(find.byType(Switch));
     await tester.pump();
     await tester.tap(find.text('Save'));
@@ -218,5 +220,62 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('All values'), findsOneWidget);
     expect(find.text('3.9 kg'), findsWidgets);
+  });
+
+  testWidgets('quick add starts a breastfeeding timer that saves from Today', (tester) async {
+    final store = await _startApp(tester);
+
+    await tester.tap(find.text('Breastfeed'));
+    await tester.pump();
+    expect(store.live?.type, EntryType.breast);
+    expect(find.text('Timing left side'), findsOneWidget);
+
+    // Switch to the right side, let a second pass, then finish and save.
+    await tester.tap(find.textContaining('Right 00:'));
+    await tester.pump();
+    expect(find.text('Timing right side'), findsOneWidget);
+    await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 1100)));
+    await tester.tap(find.text('Finish'));
+    await tester.pumpAndSettle();
+    expect(find.byType(EntrySheet), findsOneWidget);
+    await tester.tap(find.text('Save'));
+    await tester.pumpAndSettle();
+
+    final saved = store.entries.single;
+    expect(saved.type, EntryType.breast);
+    expect(saved.endSide, BreastSide.right);
+    expect(saved.rightDuration, greaterThan(Duration.zero));
+    expect(store.live, isNull);
+  });
+
+  testWidgets('quick add logs a diaper at once, with undo', (tester) async {
+    final store = await _startApp(tester);
+
+    await tester.tap(find.text('Wet'));
+    await tester.pump();
+    expect(store.entries.single.diaper, DiaperKind.wet);
+    await tester.pump(const Duration(milliseconds: 750)); // snackbar slides in
+    expect(find.text('Logged diaper · wet'), findsOneWidget);
+
+    await tester.tap(find.text('Undo'));
+    await tester.pump();
+    expect(store.entries, isEmpty);
+  });
+
+  testWidgets('trends switch to months', (tester) async {
+    await _startApp(tester);
+    await tester.tap(find.text('Trends'));
+    await tester.pumpAndSettle();
+    expect(find.text('This week'), findsOneWidget);
+
+    await tester.tap(find.text('Month'));
+    await tester.pumpAndSettle();
+    expect(find.text('This month'), findsOneWidget);
+    expect(find.text('The small lines show the last 6 months. Tap a row for its chart.'),
+        findsOneWidget);
+
+    await tester.tap(find.byTooltip('Previous month'));
+    await tester.pumpAndSettle();
+    expect(find.text('This month'), findsNothing);
   });
 }

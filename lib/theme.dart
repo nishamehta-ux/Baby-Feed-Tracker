@@ -85,7 +85,7 @@ ThemeData buildTheme() {
   );
   return ThemeData(
     colorScheme: scheme,
-    fontFamily: 'Nunito',
+    fontFamily: 'Heros',
     scaffoldBackgroundColor: AppColors.background,
     useMaterial3: true,
     textTheme: const TextTheme(
@@ -103,7 +103,7 @@ ThemeData buildTheme() {
         backgroundColor: AppColors.primary,
         minimumSize: const Size.fromHeight(56),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-        textStyle: const TextStyle(fontFamily: 'Nunito', fontSize: 17, fontWeight: FontWeight.w700),
+        textStyle: const TextStyle(fontFamily: 'Heros', fontSize: 17, fontWeight: FontWeight.w700),
       ),
     ),
     segmentedButtonTheme: SegmentedButtonThemeData(
@@ -112,7 +112,7 @@ ThemeData buildTheme() {
         selectedForegroundColor: AppColors.ink,
         foregroundColor: AppColors.ink,
         side: const BorderSide(color: AppColors.mint, width: 1.5),
-        textStyle: const TextStyle(fontFamily: 'Nunito', fontWeight: FontWeight.w700),
+        textStyle: const TextStyle(fontFamily: 'Heros', fontWeight: FontWeight.w700),
       ),
     ),
     switchTheme: SwitchThemeData(

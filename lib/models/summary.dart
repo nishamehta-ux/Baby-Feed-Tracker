@@ -218,3 +218,8 @@ String entryDetail(Entry e) {
       return e.valueWithUnit;
   }
 }
+
+/// Entries that started in [from, to), oldest first.
+List<Entry> entriesBetween(Iterable<Entry> all, DateTime from, DateTime to) =>
+    all.where((e) => !e.start.isBefore(from) && e.start.isBefore(to)).toList()
+      ..sort((a, b) => a.start.compareTo(b.start));

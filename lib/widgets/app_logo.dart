@@ -18,7 +18,8 @@ class AppMark extends StatelessWidget {
   }
 }
 
-/// Mark plus the "Oh baby baby!" wordmark, for use on the indigo header.
+/// Mark plus the "Oh baby baby!" wordmark (in Nunito, the logo's typeface), for use
+/// on the indigo header.
 class AppLogo extends StatelessWidget {
   const AppLogo({super.key, this.height = 30, this.color = Colors.white});
 
@@ -41,6 +42,7 @@ class AppLogo extends StatelessWidget {
               name,
               style: TextStyle(
                 color: color,
+                fontFamily: 'Nunito',
                 fontSize: height * 0.75,
                 fontWeight: FontWeight.w800,
                 fontVariations: const [FontVariation('wght', 800)],

@@ -53,8 +53,7 @@ void main() {
   });
 
   test('json round trip', () {
-    final f = _f(EntryType.breast, DateTime(2026, 10, 6, 8),
-        left: const Duration(seconds: 61));
+    final f = _f(EntryType.breast, DateTime(2026, 10, 6, 8), left: const Duration(seconds: 61));
     final back = Entry.fromJson(f.toJson());
     expect(back.leftDuration, f.leftDuration);
     expect(back.endSide, BreastSide.left);

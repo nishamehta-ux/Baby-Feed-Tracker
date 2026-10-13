@@ -12,10 +12,12 @@ import '../widgets/presets.dart';
 import '../widgets/sparkline.dart';
 import 'trend_sheet.dart';
 
-/// Trends: for the week on screen, the average per day of feeds, pumping and
-/// diapers and how often each routine happened, compared with last week, with an 8-week line;
-/// every numeric measurement (weight, temperature…) with its readings; and a
-/// list of the days. Tapping a trend opens its full chart.
+enum Period { week, month }
+
+/// Trends for a week or a month (any number of them back): the average per
+/// day of feeds, pumping and diapers, how often each routine happened, and
+/// every numeric measurement (weight, temperature…), each with a small line
+/// of recent periods and a full chart on tap; then a list of the days.
 class TrendsScreen extends StatefulWidget {
   const TrendsScreen({super.key, required this.store, required this.onOpenDay});
 
@@ -27,35 +29,92 @@ class TrendsScreen extends StatefulWidget {
 }
 
 class _TrendsScreenState extends State<TrendsScreen> {
-  DateTime _weekStart = startOfWeek(DateTime.now());
+  Period _period = Period.week;
+
+  /// First day of the period on screen.
+  late DateTime _start = _startOf(DateTime.now());
 
   DateTime get _today => dateOnly(DateTime.now());
+  bool get _isWeek => _period == Period.week;
 
-  void _shift(int weeks) {
-    setState(() {
-      _weekStart = DateTime(_weekStart.year, _weekStart.month, _weekStart.day + 7 * weeks);
-    });
+  /// How many periods the small lines and charts cover.
+  int get _span => _isWeek ? 8 : 6;
+  String get _unit => _isWeek ? 'week' : 'month';
+
+  DateTime _startOf(DateTime d) =>
+      _period == Period.week ? startOfWeek(d) : DateTime(d.year, d.month);
+
+  /// The start of the period [n] periods after the one starting at [start].
+  DateTime _plus(DateTime start, int n) => _isWeek
+      ? DateTime(start.year, start.month, start.day + 7 * n)
+      : DateTime(start.year, start.month + n);
+
+  int _daysIn(DateTime start) => _plus(start, 1).difference(start).inDays;
+
+  void _setPeriod(Period p) => setState(() {
+        _period = p;
+        // Keep the same moment in view: the period that holds the old start,
+        // or today when that is the current one.
+        final anchor = _start == _startOf(_today) ? _today : _start;
+        _start = _startOf(anchor);
+      });
+
+  void _shift(int n) => setState(() => _start = _plus(_start, n));
+
+  /// Opens a calendar to jump to the week or month holding any day.
+  Future<void> _pickPeriod() async {
+    final first = widget.store.entries.fold<DateTime>(
+      DateTime.now().subtract(const Duration(days: 365)),
+      (d, e) => e.start.isBefore(d) ? dateOnly(e.start) : d,
+    );
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: _start.isAfter(_today) ? _today : _start,
+      firstDate: first,
+      lastDate: _today,
+      helpText: _isWeek ? 'Go to the week of' : 'Go to the month of',
+    );
+    if (picked != null) setState(() => _start = _startOf(picked));
   }
 
-  /// Totals for the week starting [ws], divided by the days it covers. In the
-  /// current week only finished days count, so today's partial total doesn't
-  /// drag the average down (on a Monday, today is all there is).
-  _WeekAverage _averageFor(DateTime ws) {
-    final feedings = entriesInWeek(widget.store.entries, ws);
-    if (ws != startOfWeek(_today)) return _WeekAverage(Totals.of(feedings), 7);
-    final elapsed = _today.difference(ws).inDays + 1;
-    if (elapsed == 1) return _WeekAverage(Totals.of(feedings), 1);
-    return _WeekAverage(
-      Totals.of(feedings.where((f) => !isSameDay(f.start, _today))),
+  /// Totals for the period starting at [start], divided by the days it
+  /// covers. In the current period only finished days count, so today's
+  /// partial total doesn't drag the average down (on its first day, today is
+  /// all there is).
+  ///
+  /// Days before the first entry ever logged don't count either, so the
+  /// period tracking began in isn't averaged over days with nothing logged.
+  _PeriodAverage _averageFor(DateTime start, DateTime? firstDay) {
+    final entries = entriesBetween(widget.store.entries, start, _plus(start, 1));
+    final from = firstDay != null && firstDay.isAfter(start) ? firstDay : start;
+    if (start != _startOf(_today)) {
+      final days = _plus(start, 1).difference(from).inDays;
+      return _PeriodAverage(Totals.of(entries), days < 1 ? 1 : days);
+    }
+    final elapsed = _today.difference(from).inDays + 1;
+    if (elapsed == 1) return _PeriodAverage(Totals.of(entries), 1);
+    return _PeriodAverage(
+      Totals.of(entries.where((e) => !isSameDay(e.start, _today))),
       elapsed - 1,
     );
   }
 
-  String _rangeLabel(DateTime start) {
-    final end = DateTime(start.year, start.month, start.day + 6);
-    final startFmt = start.month == end.month ? DateFormat('d') : DateFormat('d MMM');
-    return '${startFmt.format(start)} – ${DateFormat('d MMM yyyy').format(end)}';
+  String get _title {
+    final current = _start == _startOf(_today);
+    if (_isWeek) return current ? 'This week' : 'Week of ${DateFormat('d MMM').format(_start)}';
+    return current ? 'This month' : DateFormat('MMMM yyyy').format(_start);
   }
+
+  String get _rangeLabel {
+    final end = _plus(_start, 1).subtract(const Duration(days: 1));
+    final startFmt = _start.month == end.month ? DateFormat('d') : DateFormat('d MMM');
+    return '${startFmt.format(_start)} – ${DateFormat('d MMM yyyy').format(end)}';
+  }
+
+  /// "Week of 5 Oct" or "October 2026", for chart lists.
+  String _periodLabel(DateTime start) => _isWeek
+      ? 'Week of ${DateFormat('d MMM').format(start)}'
+      : DateFormat('MMMM yyyy').format(start);
 
   @override
   Widget build(BuildContext context) {
@@ -64,7 +123,7 @@ class _TrendsScreenState extends State<TrendsScreen> {
       builder: (context, _) => SingleChildScrollView(
         child: Stack(
           children: [
-            const HeaderBackground(height: 340),
+            const HeaderBackground(height: 400),
             SafeArea(
               child: Padding(
                 padding: const EdgeInsets.fromLTRB(20, 24, 20, 32),
@@ -73,11 +132,25 @@ class _TrendsScreenState extends State<TrendsScreen> {
                   children: [
                     const AppLogo(),
                     const SizedBox(height: 20),
-                    Text(
-                      'Trends',
-                      style: Theme.of(context).textTheme.headlineMedium,
+                    Text('Trends', style: Theme.of(context).textTheme.headlineMedium),
+                    const SizedBox(height: 16),
+                    SegmentedButton<Period>(
+                      showSelectedIcon: false,
+                      style: SegmentedButton.styleFrom(
+                        backgroundColor: Colors.white.withValues(alpha: 0.14),
+                        foregroundColor: Colors.white,
+                        selectedBackgroundColor: Colors.white,
+                        selectedForegroundColor: AppColors.ink,
+                        side: const BorderSide(color: Colors.white54),
+                      ),
+                      segments: const [
+                        ButtonSegment(value: Period.week, label: Text('Week')),
+                        ButtonSegment(value: Period.month, label: Text('Month')),
+                      ],
+                      selected: {_period},
+                      onSelectionChanged: (v) => _setPeriod(v.first),
                     ),
-                    const SizedBox(height: 24),
+                    const SizedBox(height: 20),
                     _buildCard(context),
                   ],
                 ),
@@ -90,27 +163,29 @@ class _TrendsScreenState extends State<TrendsScreen> {
   }
 
   Widget _buildCard(BuildContext context) {
-    final ws = _weekStart;
-    final isCurrentWeek = ws == startOfWeek(_today);
-    final elapsed = isCurrentWeek ? _today.difference(ws).inDays + 1 : 7;
+    final start = _start;
+    final isCurrent = start == _startOf(_today);
+    final elapsed = isCurrent ? _today.difference(start).inDays + 1 : _daysIn(start);
+    final end = _plus(start, 1);
 
-    // The last 8 weeks, oldest first; the final entry is the week on screen.
-    final history = [
-      for (var k = 7; k >= 0; k--) _averageFor(DateTime(ws.year, ws.month, ws.day - 7 * k)),
-    ];
-    final thisWeek = history.last;
-    final lastWeek = history[history.length - 2];
+    // The last [_span] periods, oldest first; the final one is on screen.
+    final starts = [for (var k = _span - 1; k >= 0; k--) _plus(start, -k)];
+    final firstDay = widget.store.entries.isEmpty
+        ? null
+        : dateOnly(
+            widget.store.entries.map((e) => e.start).reduce((a, b) => a.isBefore(b) ? a : b));
+    final history = [for (final s in starts) _averageFor(s, firstDay)];
+    final current = history.last;
+    final previous = history[history.length - 2];
 
-    final weeks = [for (var k = 7; k >= 0; k--) DateTime(ws.year, ws.month, ws.day - 7 * k)];
-    final weekEnd = DateTime(ws.year, ws.month, ws.day + 7);
-    final routines = routineNames(widget.store.entries, until: weekEnd);
+    final routines = routineNames(widget.store.entries, until: end);
     // Standard measurements first, in preset order; then the rest, latest first.
     int rank(Measurement m) {
       final i = otherPresets.indexWhere((p) => p.name == m.title);
       return i < 0 ? otherPresets.length : i;
     }
 
-    final measurements = measurementsFrom(widget.store.entries, until: weekEnd)
+    final measurements = measurementsFrom(widget.store.entries, until: end)
       ..sort((a, b) => rank(a).compareTo(rank(b)));
 
     Widget row(
@@ -122,70 +197,70 @@ class _TrendsScreenState extends State<TrendsScreen> {
     }) {
       final points = [
         for (var i = 0; i < history.length; i++)
-          if (!history[i].isEmpty) TrendPoint(weeks[i], history[i].of(measure)),
+          if (!history[i].isEmpty) TrendPoint(starts[i], history[i].of(measure)),
       ];
       return _TrendRow(
         type: type,
         icon: icon,
         name: name,
-        value: format(thisWeek.of(measure)),
-        detail: lastWeek.isEmpty
-            ? 'Nothing logged last week'
-            : _change(thisWeek.of(measure), lastWeek.of(measure)),
+        value: format(current.of(measure)),
+        detail: previous.isEmpty
+            ? 'Nothing logged last $_unit'
+            : _change(current.of(measure), previous.of(measure)),
         trend: [for (final w in history) w.isEmpty ? null : w.of(measure)],
         onTap: points.isEmpty
             ? null
             : () => showTrendSheet(
                   context,
                   title: name,
-                  subtitle: 'Average per day for each of the last 8 weeks',
+                  subtitle: 'Average per day for each of the last $_span ${_unit}s',
                   type: type,
                   icon: icon,
                   points: points,
                   format: format,
-                  rowLabel: (p) => 'Week of ${DateFormat('d MMM').format(p.at)}',
+                  rowLabel: (p) => _periodLabel(p.at),
                 ),
       );
     }
 
-    // Routines are counted per week: they are too sparse for daily averages.
+    // Routines are counted per period: they are too sparse for daily averages.
     Widget routineRow(String name) {
       final icon = routinePresets.where((r) => r.$1 == name).map((r) => r.$2).firstOrNull;
-      int countIn(DateTime start) => entriesInWeek(widget.store.entries, start)
+      int countIn(DateTime s) => entriesBetween(widget.store.entries, s, _plus(s, 1))
           .where((e) => e.type == EntryType.routine && e.title == name)
           .length;
       String times(double v) => '${v.round()} time${v.round() == 1 ? '' : 's'}';
-      final counts = [for (final w in weeks) countIn(w)];
+      final counts = [for (final s in starts) countIn(s)];
       final first = counts.indexWhere((c) => c > 0);
       final now = counts.last, before = counts[counts.length - 2];
-      // The week in progress would dip the line, so it shows finished weeks.
-      final lineWeeks = isCurrentWeek ? counts.length - 1 : counts.length;
+      // The period in progress would dip the line, so it shows finished ones.
+      final lineCount = isCurrent ? counts.length - 1 : counts.length;
       return _TrendRow(
         type: EntryType.routine,
         icon: icon,
         name: name,
-        value: '${times(now.toDouble())}${isCurrentWeek ? ' so far' : ''}',
-        detail: isCurrentWeek
-            ? '${times(before.toDouble())} last week'
+        value: '${times(now.toDouble())}${isCurrent ? ' so far' : ''}',
+        detail: isCurrent
+            ? '${times(before.toDouble())} last $_unit'
             : _change(now.toDouble(), before.toDouble()),
         trend: [
-          for (var i = 0; i < lineWeeks; i++) first < 0 || i < first ? null : counts[i].toDouble(),
+          for (var i = 0; i < lineCount; i++) first < 0 || i < first ? null : counts[i].toDouble(),
         ],
         onTap: first < 0
             ? null
             : () => showTrendSheet(
                   context,
                   title: name,
-                  subtitle: 'Times per week for each of the last 8 weeks',
+                  subtitle: 'Times per $_unit for each of the last $_span ${_unit}s',
                   type: EntryType.routine,
                   icon: icon,
                   points: [
-                    for (var i = first; i < weeks.length; i++)
-                      TrendPoint(weeks[i], counts[i].toDouble()),
+                    for (var i = first; i < starts.length; i++)
+                      TrendPoint(starts[i], counts[i].toDouble()),
                   ],
                   format: times,
-                  rowLabel: (p) => 'Week of ${DateFormat('d MMM').format(p.at)}'
-                      '${isCurrentWeek && p.at == ws ? ' (so far)' : ''}',
+                  rowLabel: (p) =>
+                      '${_periodLabel(p.at)}${isCurrent && p.at == start ? ' (so far)' : ''}',
                 ),
       );
     }
@@ -232,40 +307,53 @@ class _TrendsScreenState extends State<TrendsScreen> {
           Row(
             children: [
               Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      isCurrentWeek ? 'This week' : 'Week of ${DateFormat('d MMM').format(ws)}',
-                      style: Theme.of(context).textTheme.titleLarge?.copyWith(fontSize: 22),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      _rangeLabel(ws),
-                      style: const TextStyle(
-                        fontWeight: FontWeight.w700,
-                        color: AppColors.muted,
+                child: InkWell(
+                  onTap: _pickPeriod,
+                  borderRadius: BorderRadius.circular(8),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        _title,
+                        style: Theme.of(context).textTheme.titleLarge?.copyWith(fontSize: 22),
                       ),
-                    ),
-                  ],
+                      const SizedBox(height: 2),
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Flexible(
+                            child: Text(
+                              _rangeLabel,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                  fontWeight: FontWeight.w700, color: AppColors.muted),
+                            ),
+                          ),
+                          const SizedBox(width: 4),
+                          const Icon(Icons.calendar_month_outlined,
+                              size: 18, color: AppColors.muted),
+                        ],
+                      ),
+                    ],
+                  ),
                 ),
               ),
               RoundIconButton(
                 icon: Icons.chevron_left,
-                tooltip: 'Previous week',
+                tooltip: 'Previous $_unit',
                 onPressed: () => _shift(-1),
               ),
               const SizedBox(width: 4),
               RoundIconButton(
                 icon: Icons.chevron_right,
-                tooltip: 'Next week',
-                onPressed: isCurrentWeek ? null : () => _shift(1),
+                tooltip: 'Next $_unit',
+                onPressed: isCurrent ? null : () => _shift(1),
               ),
             ],
           ),
           const SizedBox(height: 24),
           Text('Average per day', style: Theme.of(context).textTheme.titleMedium),
-          if (isCurrentWeek && elapsed > 1)
+          if (isCurrent && elapsed > 1)
             const Text(
               "Today is added once it's over.",
               style: TextStyle(color: AppColors.muted, fontSize: 13),
@@ -279,15 +367,15 @@ class _TrendsScreenState extends State<TrendsScreen> {
           row(EntryType.pump, 'Pumped', (t) => t.pumpMl.toDouble(), (v) => '${v.round()} ml'),
           row(EntryType.diaper, 'Diapers', (t) => t.diaperCount.toDouble(), _perDay),
           const SizedBox(height: 4),
-          const Text(
-            'The small lines show the last 8 weeks. Tap a row for its chart.',
-            style: TextStyle(color: AppColors.muted, fontSize: 12),
+          Text(
+            'The small lines show the last $_span ${_unit}s. Tap a row for its chart.',
+            style: const TextStyle(color: AppColors.muted, fontSize: 12),
           ),
           if (routines.isNotEmpty) ...[
             const SizedBox(height: 24),
             Text('Routines', style: Theme.of(context).textTheme.titleMedium),
             Text(
-              isCurrentWeek ? 'Times this week so far, against last week.' : 'Times that week.',
+              isCurrent ? 'Times this $_unit so far, against last $_unit.' : 'Times that $_unit.',
               style: const TextStyle(color: AppColors.muted, fontSize: 13),
             ),
             const SizedBox(height: 8),
@@ -308,11 +396,12 @@ class _TrendsScreenState extends State<TrendsScreen> {
           const SizedBox(height: 4),
           for (var i = elapsed - 1; i >= 0; i--)
             _DayRow(
-              day: DateTime(ws.year, ws.month, ws.day + i),
+              day: DateTime(start.year, start.month, start.day + i),
               totals: Totals.of(
-                entriesOnDay(widget.store.entries, DateTime(ws.year, ws.month, ws.day + i)),
+                entriesOnDay(
+                    widget.store.entries, DateTime(start.year, start.month, start.day + i)),
               ),
-              onTap: () => widget.onOpenDay(DateTime(ws.year, ws.month, ws.day + i)),
+              onTap: () => widget.onOpenDay(DateTime(start.year, start.month, start.day + i)),
             ),
         ],
       ),
@@ -326,16 +415,16 @@ class _TrendsScreenState extends State<TrendsScreen> {
   }
 
   String _change(double now, double before) {
-    if (before <= 0) return now > 0 ? 'New this week' : 'Same as last week';
+    if (before <= 0) return now > 0 ? 'New this $_unit' : 'Same as last $_unit';
     final pct = ((now - before) / before * 100).round();
-    if (pct == 0) return 'Same as last week';
-    return pct > 0 ? 'Up $pct% on last week' : 'Down ${-pct}% on last week';
+    if (pct == 0) return 'Same as last $_unit';
+    return pct > 0 ? 'Up $pct% on last $_unit' : 'Down ${-pct}% on last $_unit';
   }
 }
 
-/// Totals for one week and the number of days they cover.
-class _WeekAverage {
-  const _WeekAverage(this.totals, this.days);
+/// Totals for one week or month and the number of days they cover.
+class _PeriodAverage {
+  const _PeriodAverage(this.totals, this.days);
 
   final Totals totals;
   final int days;
@@ -364,7 +453,7 @@ class _TrendRow extends StatelessWidget {
   final String value;
   final String detail;
 
-  /// Evenly spaced values, oldest first; null for weeks with nothing logged.
+  /// Evenly spaced values, oldest first; null for periods with nothing logged.
   final List<double?> trend;
   final bool zeroBased;
   final VoidCallback? onTap;

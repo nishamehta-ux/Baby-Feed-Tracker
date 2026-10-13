@@ -15,8 +15,8 @@ A simple Flutter app for logging a baby's feeds, pumping, diapers, routines and 
   - **Other**: one entry for anything else. Presets for weight (kg), height (cm), head size (cm), temperature (°C), medicine, vaccine and baby firsts, or *Something else* with your own name, value and unit.
   - Every entry has a time and notes. Closing a drawer with unsaved input asks first; editing an entry adds *Delete entry*.
 - **Two tabs**
-  - **Today** (landing page): *Add a feeding*, a *Last feeding* card (how long ago and how much), a **Summary** for *Today* or the *Last 24 h* (a count per kind: breastfeeding time with left/right, bottle total split into breast milk and formula, amount pumped, wet/dirty/dry diapers, routines, and the latest Other entries such as "Weight 3.9 kg"), and the **Timeline** of everything logged. Arrows step back through earlier days. Tap a feeding to edit it, swipe left to delete it (with undo).
-  - **Trends**: for the week on screen (arrows go back), the average per day of breastfeeding, formula, breast milk by bottle, pumping and diapers, compared with last week; how many times each routine happened, against last week; and **Measurements**: every number logged under Other (weight, height, head size, temperature, or your own) with its latest reading and the change since the one before. Each row has a small line of the last 8 weeks or latest readings; tap it for a full chart (tap the chart to read a point) and every value. Below that is a list of the days; tap one to open it on the Today tab. Current-week averages count finished days only.
+  - **Today** (landing page): *Add an entry*; **Quick add** tiles that start a breastfeeding timer on the suggested side or a pumping timer in one tap, or log a repeat of the last bottle or a wet or dirty diaper at once (with Undo); a live timer card while a feed or pump runs (switch side, pause, finish to review and save, or discard) that keeps running in the background and across app restarts; a *Last feeding* card; a **Summary** for *Today* or the *Last 24 h*; and the **Timeline**. Arrows step through days, and tapping the date opens a calendar to jump to any day, however long ago. Tap an entry to edit it, swipe left to delete it (with undo).
+  - **Trends**: switch between **Week** and **Month**; arrows go back as far as you like, and tapping the dates opens a calendar to jump to any week or month. For the period on screen: the average per day of breastfeeding, formula, breast milk by bottle, pumping and diapers, compared with the previous period; how many times each routine happened; and **Measurements**, every number logged under Other (weight, height, head size, temperature, or your own) with its latest reading and the change since the one before. Each row has a small line of the last 8 weeks or 6 months (or the latest readings); tap it for a full chart and every value. Below that is a list of the days. Averages count finished days only, and none before the first entry ever logged.
 - The baby's name can be edited by tapping it.
 - Data is stored on the device with `shared_preferences`.
 
@@ -25,7 +25,7 @@ A simple Flutter app for logging a baby's feeds, pumping, diapers, routines and 
 - **Palette**: `#413C58` indigo · `#A3C4BC` sage · `#BFD7B5` mint · `#E7EFC5` cream · `#F2DDA4` sand. Each kind of entry has its own colour: breastfeeding indigo, formula sand, breast milk sage, pumping mint, diapers cream, routines a light tint of indigo, and Other white with an indigo outline. Every Material role in the theme (switches, segmented buttons, pickers, dialogs) is set from the palette. Thin chart lines use deeper steps of the same hues so they stay visible on white.
 - **Logo**: a sleepy baby face with a curl of hair and a little "oh" mouth, in `assets/branding/` (SVG and PNG). App icons are generated from `ohbaby_app_icon.png` with `dart run flutter_launcher_icons`.
 - **Name**: "Oh baby baby!" everywhere, except under the iPhone home-screen icon, which shows "Oh baby!" because iOS cuts off longer names.
-- **Typeface**: [Nunito](https://github.com/googlefonts/nunito), bundled under the SIL Open Font License (`assets/fonts/OFL.txt`).
+- **Typefaces**: app text uses [TeX Gyre Heros](https://www.gust.org.pl/projects/e-foundry/tex-gyre/heros), a free font drawn after Helvetica (GUST Font License, `assets/fonts/GUST-FONT-LICENSE.txt`); Helvetica itself can't be bundled under its licence. The logo wordmark uses [Nunito](https://github.com/googlefonts/nunito) (SIL Open Font License, `assets/fonts/OFL.txt`).
 
 ## Run
 
@@ -50,13 +50,14 @@ lib/
   models/entry.dart            Entry model (every kind of entry) + JSON
   models/summary.dart          daily/weekly totals and formatting
   models/trends.dart           measurement series and routine counts
+  models/live_timer.dart       breastfeeding/pumping timer started from Today
   data/entry_store.dart        in-memory store persisted to shared_preferences
   screens/main_shell.dart      bottom tabs (Today, Week)
   screens/today_screen.dart    landing page: last feeding, summary, timeline
   screens/entry_sheet.dart     add/edit drawers for every kind of entry
   screens/trends_screen.dart   Trends tab
   screens/trend_sheet.dart     full chart of one trend
-  widgets/                     logo, presets, sparkline, trend chart, shared UI
+  widgets/                     logo, presets, quick add + live timer, sparkline, trend chart, shared UI
 ```
 
 ## Screenshots

@@ -8,6 +8,7 @@ import '../theme.dart';
 import '../widgets/app_logo.dart';
 import '../widgets/common.dart';
 import '../widgets/presets.dart';
+import '../widgets/quick_actions.dart';
 import 'entry_sheet.dart';
 
 /// Landing page: add a feeding, and the overview of one day (today by default).
@@ -89,30 +90,86 @@ class _TodayScreenState extends State<TodayScreen> {
     return ListenableBuilder(
       listenable: Listenable.merge([store, widget.day]),
       builder: (context, _) => SingleChildScrollView(
-        child: Stack(
+        child: Column(
           children: [
-            const HeaderBackground(height: 480),
-            SafeArea(
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(20, 24, 20, 32),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const AppLogo(),
-                    const SizedBox(height: 20),
-                    _buildHeader(context),
-                    const SizedBox(height: 24),
-                    _AddFeedingButton(onTap: () => showAddMenu(context, store)),
-                    const SizedBox(height: 18),
-                    _buildOverview(context),
+            HeaderPanel(
+              padding: EdgeInsets.fromLTRB(20, MediaQuery.of(context).padding.top + 24, 20, 72),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const AppLogo(),
+                  const SizedBox(height: 20),
+                  _buildHeader(context),
+                  const SizedBox(height: 24),
+                  _AddFeedingButton(onTap: () => showAddMenu(context, store)),
+                  const SizedBox(height: 16),
+                  if (store.live != null) ...[
+                    LiveTimerCard(store: store, onFinish: _finishLive),
+                    const SizedBox(height: 16),
                   ],
-                ),
+                  const Text(
+                    'Quick add',
+                    style: TextStyle(color: Colors.white70, fontWeight: FontWeight.w700),
+                  ),
+                  const SizedBox(height: 8),
+                  QuickActions(store: store, onLogged: _offerUndoLogged),
+                ],
+              ),
+            ),
+            // The day card overlaps the bottom of the header.
+            Transform.translate(
+              offset: const Offset(0, -48),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                child: _buildOverview(context),
               ),
             ),
           ],
         ),
       ),
     );
+  }
+
+  /// Stops the live timer and opens it in the drawer to review and save.
+  Future<void> _finishLive() async {
+    final live = store.live;
+    if (live == null) return;
+    final now = DateTime.now();
+    await store.setLive(live.paused(now));
+    if (!mounted) return;
+    final saved = await showEntrySheet(context, store, draft: live.toDraft(now, store.newId()));
+    if (saved) await store.setLive(null);
+  }
+
+  void _offerUndoLogged(Entry entry) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        SnackBar(
+          content: Text('Logged ${[
+            entryTitle(entry),
+            entryDetail(entry)
+          ].where((s) => s.isNotEmpty).join(' · ').toLowerCase()}'),
+          action: SnackBarAction(label: 'Undo', onPressed: () => store.delete(entry.id)),
+        ),
+      );
+  }
+
+  /// Opens a calendar to jump to any day, however long ago.
+  Future<void> _pickDay() async {
+    final first = store.entries.fold<DateTime>(
+      DateTime.now().subtract(const Duration(days: 365)),
+      (d, e) => e.start.isBefore(d) ? dateOnly(e.start) : d,
+    );
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: widget.day.value,
+      firstDate: first,
+      lastDate: _today,
+      helpText: 'Go to a day',
+    );
+    if (picked != null) widget.day.value = dateOnly(picked);
   }
 
   Widget _buildHeader(BuildContext context) {
@@ -169,11 +226,26 @@ class _TodayScreenState extends State<TodayScreen> {
                       style: Theme.of(context).textTheme.titleLarge?.copyWith(fontSize: 24),
                     ),
                     const SizedBox(height: 2),
-                    Text(
-                      DateFormat('d MMMM yyyy').format(day),
-                      style: const TextStyle(
-                        fontWeight: FontWeight.w700,
-                        color: AppColors.muted,
+                    InkWell(
+                      onTap: _pickDay,
+                      borderRadius: BorderRadius.circular(6),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Flexible(
+                            child: Text(
+                              DateFormat('d MMMM yyyy').format(day),
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                fontWeight: FontWeight.w700,
+                                color: AppColors.muted,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 4),
+                          const Icon(Icons.calendar_month_outlined,
+                              size: 18, color: AppColors.muted),
+                        ],
                       ),
                     ),
                   ],

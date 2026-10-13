@@ -61,16 +61,19 @@ Future<void> showAddMenu(BuildContext context, EntryStore store) async {
   await showEntrySheet(context, store, type: type);
 }
 
-/// Opens the form for one entry in a tall drawer: a new entry of [type], or
-/// [existing] to edit. [onDeleted] runs after the user deletes [existing].
-Future<void> showEntrySheet(
+/// Opens the form for one entry in a tall drawer: a new entry of [type],
+/// [existing] to edit, or a new entry pre-filled from [draft] (a finished
+/// timer). [onDeleted] runs after the user deletes [existing]. Completes with
+/// true when the entry was saved.
+Future<bool> showEntrySheet(
   BuildContext context,
   EntryStore store, {
   EntryType? type,
   Entry? existing,
+  Entry? draft,
   ValueChanged<Entry>? onDeleted,
-}) {
-  return showModalBottomSheet<void>(
+}) async {
+  final saved = await showModalBottomSheet<bool>(
     context: context,
     isScrollControlled: true,
     useSafeArea: true,
@@ -80,11 +83,13 @@ Future<void> showEntrySheet(
     backgroundColor: Colors.transparent,
     builder: (_) => EntrySheet(
       store: store,
-      type: type ?? existing!.type,
+      type: type ?? (existing ?? draft)!.type,
       existing: existing,
+      draft: draft,
       onDeleted: onDeleted,
     ),
   );
+  return saved ?? false;
 }
 
 class EntrySheet extends StatefulWidget {
@@ -93,12 +98,16 @@ class EntrySheet extends StatefulWidget {
     required this.store,
     required this.type,
     this.existing,
+    this.draft,
     this.onDeleted,
   });
 
   final EntryStore store;
   final EntryType type;
   final Entry? existing;
+
+  /// Values to start a new entry from, e.g. a finished timer.
+  final Entry? draft;
   final ValueChanged<Entry>? onDeleted;
 
   @override
@@ -150,7 +159,7 @@ class _EntrySheetState extends State<EntrySheet> {
   @override
   void initState() {
     super.initState();
-    final e = widget.existing;
+    final e = widget.existing ?? widget.draft;
     final now = DateTime.now();
     _type = widget.type;
     _start = e?.start ?? DateTime(now.year, now.month, now.day, now.hour, now.minute);
@@ -419,8 +428,9 @@ class _EntrySheetState extends State<EntrySheet> {
       };
 
   Future<void> _close() async {
-    if (_isEditing || !_hasInput) {
-      Navigator.of(context).pop();
+    // A draft comes from a timer that stays on Today, so nothing is lost.
+    if (_isEditing || widget.draft != null || !_hasInput) {
+      Navigator.of(context).pop(false);
       return;
     }
     final discard = await showDialog<bool>(
@@ -435,7 +445,7 @@ class _EntrySheetState extends State<EntrySheet> {
         ],
       ),
     );
-    if (discard == true && mounted) Navigator.of(context).pop();
+    if (discard == true && mounted) Navigator.of(context).pop(false);
   }
 
   /// What is missing before this entry can be saved, or null.
@@ -521,7 +531,7 @@ class _EntrySheetState extends State<EntrySheet> {
       notes: _notes.text.trim(),
     );
     await widget.store.upsert(entry);
-    if (mounted) Navigator.of(context).pop();
+    if (mounted) Navigator.of(context).pop(true);
   }
 
   Future<void> _delete() async {
@@ -1234,7 +1244,7 @@ class _TimerBlock extends StatelessWidget {
                   foregroundColor: AppColors.ink,
                   side: const BorderSide(color: AppColors.ink, width: 1.5),
                   textStyle: const TextStyle(
-                      fontFamily: 'Nunito', fontSize: 16, fontWeight: FontWeight.w700),
+                      fontFamily: 'Heros', fontSize: 16, fontWeight: FontWeight.w700),
                 ),
                 child: Text(action),
               ),

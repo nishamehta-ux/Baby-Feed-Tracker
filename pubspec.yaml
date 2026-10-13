@@ -30,6 +30,15 @@ flutter_launcher_icons:
 flutter:
   uses-material-design: true
   fonts:
+    # App text: TeX Gyre Heros, a free font drawn after Helvetica (GUST Font License).
+    - family: Heros
+      fonts:
+        - asset: assets/fonts/TeXGyreHeros-Regular.otf
+        - asset: assets/fonts/TeXGyreHeros-Bold.otf
+          weight: 700
+        - asset: assets/fonts/TeXGyreHeros-Italic.otf
+          style: italic
+    # The logo wordmark only (SIL Open Font License).
     - family: Nunito
       fonts:
         - asset: assets/fonts/Nunito.ttf

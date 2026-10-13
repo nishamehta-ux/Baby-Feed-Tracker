@@ -41,6 +41,28 @@ class HeaderBackground extends StatelessWidget {
   }
 }
 
+/// The indigo header as a panel that grows with its [child], with the same
+/// curved bottom edge as [HeaderBackground].
+class HeaderPanel extends StatelessWidget {
+  const HeaderPanel({super.key, required this.child, this.padding = EdgeInsets.zero});
+
+  final Widget child;
+  final EdgeInsets padding;
+
+  @override
+  Widget build(BuildContext context) {
+    return ClipPath(
+      clipper: _CurveClipper(),
+      child: Container(
+        width: double.infinity,
+        color: AppColors.primary,
+        padding: padding,
+        child: child,
+      ),
+    );
+  }
+}
+
 class _CurveClipper extends CustomClipper<Path> {
   @override
   Path getClip(Size size) => Path()
