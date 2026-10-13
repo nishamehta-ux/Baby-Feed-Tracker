@@ -48,22 +48,14 @@ class QuickActions extends StatelessWidget {
         _Tile(
           type: EntryType.breast,
           title: 'Breastfeed',
-          subtitle: 'Start ${side == BreastSide.left ? 'left' : 'right'} side',
-          icon: Icons.play_arrow_rounded,
-          onTap: () {
-            final now = DateTime.now();
-            store.setLive(LiveTimer(type: EntryType.breast, start: now, side: side, since: now));
-          },
+          subtitle: 'Next: ${side == BreastSide.left ? 'left' : 'right'} side',
+          onTap: () => store.setLive(LiveTimer.ready(EntryType.breast, DateTime.now())),
         ),
         _Tile(
           type: EntryType.pump,
           title: 'Pump',
-          subtitle: 'Start timer',
-          icon: Icons.play_arrow_rounded,
-          onTap: () {
-            final now = DateTime.now();
-            store.setLive(LiveTimer(type: EntryType.pump, start: now, since: now));
-          },
+          subtitle: 'Timer',
+          onTap: () => store.setLive(LiveTimer.ready(EntryType.pump, DateTime.now())),
         ),
       ],
       if (lastBottle != null && lastBottle.amountMl > 0)
@@ -105,16 +97,12 @@ class _Tile extends StatelessWidget {
     required this.title,
     required this.subtitle,
     required this.onTap,
-    this.icon,
   });
 
   final EntryType type;
   final String title;
   final String subtitle;
   final VoidCallback onTap;
-
-  /// Shown at the corner, e.g. a play symbol for tiles that start a timer.
-  final IconData? icon;
 
   @override
   Widget build(BuildContext context) {
@@ -134,13 +122,7 @@ class _Tile extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Row(
-                    children: [
-                      EntryIcon(type: type, size: 32),
-                      const Spacer(),
-                      if (icon != null) Icon(icon, color: AppColors.ink, size: 22),
-                    ],
-                  ),
+                  EntryIcon(type: type, size: 32),
                   const SizedBox(height: 10),
                   Text(
                     title,
@@ -194,6 +176,11 @@ class _LiveTimerCardState extends State<LiveTimerCard> {
   }
 
   Future<void> _discard() async {
+    // Nothing counted yet: just close the card.
+    if (widget.store.live?.notStarted ?? true) {
+      await widget.store.setLive(null);
+      return;
+    }
     final ok = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
@@ -214,11 +201,14 @@ class _LiveTimerCardState extends State<LiveTimerCard> {
     if (live == null) return const SizedBox.shrink();
     final now = DateTime.now();
     final isBreast = live.type == EntryType.breast;
-    final status = !live.running
-        ? 'Paused'
-        : isBreast
-            ? 'Timing ${live.side == BreastSide.right ? 'right' : 'left'} side'
-            : 'Timing';
+    final lastSide = widget.store.lastWhere((e) => e.type == EntryType.breast)?.endSide;
+    final status = live.notStarted
+        ? (isBreast ? 'Choose a side to start' : 'Tap Start when you begin')
+        : !live.running
+            ? 'Paused'
+            : isBreast
+                ? 'Timing ${live.side == BreastSide.right ? 'right' : 'left'} side'
+                : 'Timing';
 
     return Container(
       padding: const EdgeInsets.fromLTRB(16, 14, 16, 12),
@@ -261,7 +251,8 @@ class _LiveTimerCardState extends State<LiveTimerCard> {
                   Expanded(
                     child: _SideButton(
                       label: s == BreastSide.left ? 'Left' : 'Right',
-                      time: formatClock(live.onSide(s, now)),
+                      time: live.notStarted ? null : formatClock(live.onSide(s, now)),
+                      wasLastSide: live.notStarted && lastSide == s,
                       running: live.running && live.side == s,
                       onTap: () => widget.store.setLive(live.toggled(DateTime.now(), s)),
                     ),
@@ -275,7 +266,7 @@ class _LiveTimerCardState extends State<LiveTimerCard> {
               child: OutlinedButton.icon(
                 onPressed: () => widget.store.setLive(live.toggled(DateTime.now())),
                 icon: Icon(live.running ? Icons.pause : Icons.play_arrow),
-                label: Text(live.running ? 'Pause' : 'Resume'),
+                label: Text(live.running ? 'Pause' : (live.notStarted ? 'Start' : 'Resume')),
                 style: OutlinedButton.styleFrom(
                   minimumSize: const Size.fromHeight(46),
                   foregroundColor: AppColors.ink,
@@ -290,11 +281,11 @@ class _LiveTimerCardState extends State<LiveTimerCard> {
               TextButton(
                 onPressed: _discard,
                 style: TextButton.styleFrom(foregroundColor: AppColors.danger),
-                child: const Text('Discard'),
+                child: Text(live.notStarted ? 'Cancel' : 'Discard'),
               ),
               const Spacer(),
               FilledButton(
-                onPressed: widget.onFinish,
+                onPressed: live.notStarted ? null : widget.onFinish,
                 style: FilledButton.styleFrom(
                   minimumSize: const Size(120, 44),
                   shape: const StadiumBorder(),
@@ -315,19 +306,27 @@ class _SideButton extends StatelessWidget {
     required this.time,
     required this.running,
     required this.onTap,
+    this.wasLastSide = false,
   });
 
   final String label;
-  final String time;
+
+  /// Null before the timer has started: the button reads "Start left".
+  final String? time;
   final bool running;
   final VoidCallback onTap;
+
+  /// Marks the side the previous feed ended on, to help alternate.
+  final bool wasLastSide;
 
   @override
   Widget build(BuildContext context) {
     final fg = running ? Colors.white : AppColors.ink;
     return Semantics(
       button: true,
-      label: '$label side, $time, ${running ? 'running, tap to pause' : 'tap to time this side'}',
+      label: time == null
+          ? 'Start $label side${wasLastSide ? ', the side the last feed ended on' : ''}'
+          : '$label side, $time, ${running ? 'running, tap to pause' : 'tap to time this side'}',
       child: Material(
         color: running ? AppColors.indigo : Colors.white,
         shape: StadiumBorder(side: BorderSide(color: AppColors.ink, width: running ? 0 : 1.25)),
@@ -345,13 +344,27 @@ class _SideButton extends StatelessWidget {
                     Icon(running ? Icons.pause : Icons.play_arrow, color: fg, size: 20),
                     const SizedBox(width: 6),
                     Text(
-                      '$label $time',
+                      time == null ? 'Start ${label.toLowerCase()}' : '$label $time',
                       style: TextStyle(
                         fontWeight: FontWeight.w700,
                         color: fg,
                         fontFeatures: const [FontFeature.tabularFigures()],
                       ),
                     ),
+                    if (wasLastSide) ...[
+                      const SizedBox(width: 8),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: AppColors.cream,
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: const Text(
+                          'last side',
+                          style: TextStyle(fontSize: 12, color: AppColors.ink),
+                        ),
+                      ),
+                    ],
                   ],
                 ),
               ),

@@ -32,6 +32,13 @@ class LiveTimer {
 
   bool get running => since != null;
 
+  /// Opened but not started: no side chosen yet and nothing counted.
+  bool get notStarted => !running && left == Duration.zero && right == Duration.zero;
+
+  /// A timer waiting for a side (breastfeeding) or a tap on Start (pumping).
+  /// Nothing is counted until then.
+  factory LiveTimer.ready(EntryType type, DateTime now) => LiveTimer(type: type, start: now);
+
   /// Time on [side] (breastfeeding), counting the current run.
   Duration onSide(BreastSide s, DateTime now) {
     final base = s == BreastSide.left ? left : right;
@@ -60,7 +67,8 @@ class LiveTimer {
     if (wasRunningSide) return p;
     return LiveTimer(
       type: type,
-      start: start,
+      // The entry starts when timing does, not when the card was opened.
+      start: notStarted ? now : start,
       left: p.left,
       right: p.right,
       side: type == EntryType.breast ? (s ?? side ?? BreastSide.left) : null,

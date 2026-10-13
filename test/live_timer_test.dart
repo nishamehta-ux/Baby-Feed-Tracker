@@ -6,6 +6,21 @@ void main() {
   final t0 = DateTime(2026, 10, 13, 9);
   DateTime at(int minutes) => t0.add(Duration(minutes: minutes));
 
+  test('a ready timer counts nothing until a side is picked', () {
+    final opened = DateTime(2026, 1, 1, 10);
+    final ready = LiveTimer.ready(EntryType.breast, opened);
+    expect(ready.notStarted, isTrue);
+    expect(ready.total(opened.add(const Duration(minutes: 5))), Duration.zero);
+
+    final picked = opened.add(const Duration(minutes: 2));
+    final started = ready.toggled(picked, BreastSide.right);
+    expect(started.notStarted, isFalse);
+    expect(started.start, picked);
+    expect(started.side, BreastSide.right);
+    expect(started.onSide(BreastSide.right, picked.add(const Duration(minutes: 3))),
+        const Duration(minutes: 3));
+  });
+
   test('breastfeeding counts time per side across switches and pauses', () {
     var live = LiveTimer(type: EntryType.breast, start: t0, side: BreastSide.left, since: t0);
     live = live.toggled(at(10), BreastSide.right); // 10 m left, now right

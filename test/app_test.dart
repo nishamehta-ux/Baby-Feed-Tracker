@@ -43,8 +43,8 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(store.entries.single.type, EntryType.bottle);
-    expect(find.text('Bottle feeding'), findsOneWidget);
-    expect(find.text('30 ml formula'), findsOneWidget);
+    expect(find.text('Formula (bottle)'), findsOneWidget);
+    expect(find.text('Last feeding just now · Formula 30 ml', findRichText: true), findsOneWidget);
     expect(find.text('Bottle 30 ml'), findsOneWidget); // quick-add repeats it
 
     // Breast milk, reusing the last amount.
@@ -61,9 +61,10 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(store.entries, hasLength(2));
-    expect(find.text('60 ml total'), findsOneWidget);
-    expect(find.text('30 ml breast milk'), findsOneWidget);
+    expect(find.text('60 ml'), findsOneWidget); // the day's bottle total
+    expect(find.text('Breast milk (bottle)'), findsOneWidget);
     expect(find.text('Timeline'), findsOneWidget);
+    expect(find.text('2 entries'), findsOneWidget);
 
     // The Trends tab lists today; tapping it comes back to the Today summary.
     await tester.tap(find.text('Trends'));
@@ -74,7 +75,7 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(dayRow);
     await tester.pumpAndSettle();
-    expect(find.text('Summary'), findsOneWidget);
+    expect(find.text('Timeline'), findsOneWidget);
   });
 
   testWidgets('breastfeeding needs a timed side before saving', (tester) async {
@@ -133,7 +134,7 @@ void main() {
     await tester.pumpAndSettle();
     expect(store.entries.single.diaper, DiaperKind.both);
     expect(store.entries.single.rash, isTrue);
-    expect(find.text('1 wet · 1 dirty'), findsOneWidget);
+    expect(find.text('diaper'), findsOneWidget); // the day's summary: 1 diaper
 
     // Pumping: 60 ml left and 50 ml right.
     await _openAdd(tester, 'Pumping');
@@ -152,7 +153,7 @@ void main() {
     await tester.pumpAndSettle();
     final pump = store.entries.firstWhere((e) => e.type == EntryType.pump);
     expect((pump.leftMl, pump.rightMl, pump.amountMl), (60, 50, 110));
-    expect(find.text('110 ml total'), findsOneWidget);
+    expect(find.text('110 ml'), findsOneWidget); // the day's pumped total
 
     // Routine from the presets.
     await _openAdd(tester, 'Routine');
@@ -175,7 +176,7 @@ void main() {
     await tester.pumpAndSettle();
     final weight = store.entries.firstWhere((e) => e.type == EntryType.other);
     expect((weight.title, weight.value, weight.unit), ('Weight', '3.9', 'kg'));
-    expect(find.text('Weight 3.9 kg'), findsOneWidget);
+    expect(find.text('3.9 kg'), findsOneWidget);
   });
 
   testWidgets('Other can log something without a preset', (tester) async {
@@ -228,6 +229,14 @@ void main() {
     await tester.tap(find.text('Breastfeed'));
     await tester.pump();
     expect(store.live?.type, EntryType.breast);
+    // Nothing runs until a side is picked.
+    expect(find.text('Choose a side to start'), findsOneWidget);
+    expect(store.live!.running, isFalse);
+    expect(
+        tester.widget<FilledButton>(find.widgetWithText(FilledButton, 'Finish')).onPressed, isNull);
+
+    await tester.tap(find.text('Start left'));
+    await tester.pump();
     expect(find.text('Timing left side'), findsOneWidget);
 
     // Switch to the right side, let a second pass, then finish and save.
