@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../data/entry_store.dart';
 import '../models/summary.dart';
 import '../theme.dart';
+import 'entry_sheet.dart';
 import 'today_screen.dart';
 import 'trends_screen.dart';
 
@@ -43,6 +44,16 @@ class _MainShellState extends State<MainShell> {
           TrendsScreen(store: widget.store, onOpenDay: _openDay),
         ],
       ),
+      // Adding an entry is the main action on Today.
+      floatingActionButton: _tab == 0
+          ? FloatingActionButton.extended(
+              onPressed: () => showAddMenu(context, widget.store),
+              backgroundColor: AppColors.indigo,
+              foregroundColor: Colors.white,
+              icon: const Icon(Icons.add),
+              label: const Text('Add an entry'),
+            )
+          : null,
       bottomNavigationBar: NavigationBar(
         selectedIndex: _tab,
         backgroundColor: Colors.white,

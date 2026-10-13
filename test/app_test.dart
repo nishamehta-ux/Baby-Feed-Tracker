@@ -30,6 +30,7 @@ void main() {
   testWidgets('log bottles from the drawer and see them in the summary', (tester) async {
     final store = await _startApp(tester);
     expect(find.text('Nothing logged yet today.'), findsOneWidget);
+    expect(find.widgetWithText(FloatingActionButton, 'Add an entry'), findsOneWidget);
 
     // Formula, 30 ml.
     await _openAdd(tester, 'Bottle feeding');
@@ -61,7 +62,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(store.entries, hasLength(2));
-    expect(find.text('60 ml'), findsOneWidget); // the day's bottle total
+    expect(find.text('60 ml bottle', findRichText: true), findsOneWidget);
     expect(find.text('Breast milk (bottle)'), findsOneWidget);
     expect(find.text('Timeline'), findsOneWidget);
     expect(find.text('2 entries'), findsOneWidget);
@@ -134,7 +135,7 @@ void main() {
     await tester.pumpAndSettle();
     expect(store.entries.single.diaper, DiaperKind.both);
     expect(store.entries.single.rash, isTrue);
-    expect(find.text('diaper'), findsOneWidget); // the day's summary: 1 diaper
+    expect(find.text('1 diaper', findRichText: true), findsOneWidget);
 
     // Pumping: 60 ml left and 50 ml right.
     await _openAdd(tester, 'Pumping');
@@ -153,7 +154,7 @@ void main() {
     await tester.pumpAndSettle();
     final pump = store.entries.firstWhere((e) => e.type == EntryType.pump);
     expect((pump.leftMl, pump.rightMl, pump.amountMl), (60, 50, 110));
-    expect(find.text('110 ml'), findsOneWidget); // the day's pumped total
+    expect(find.text('110 ml pumped', findRichText: true), findsOneWidget);
 
     // Routine from the presets.
     await _openAdd(tester, 'Routine');

@@ -99,8 +99,6 @@ class _TodayScreenState extends State<TodayScreen> {
                   const SizedBox(height: 20),
                   _buildHeader(context),
                   const SizedBox(height: 24),
-                  _AddFeedingButton(onTap: () => showAddMenu(context, store)),
-                  const SizedBox(height: 16),
                   if (store.live != null) ...[
                     LiveTimerCard(store: store, onFinish: _finishLive),
                     const SizedBox(height: 16),
@@ -122,6 +120,7 @@ class _TodayScreenState extends State<TodayScreen> {
                 child: _buildOverview(context),
               ),
             ),
+            const SizedBox(height: 40),
           ],
         ),
       ),
@@ -275,28 +274,35 @@ class _TodayScreenState extends State<TodayScreen> {
           ],
           if (entries.isNotEmpty) ...[
             const SizedBox(height: 16),
-            Container(
-              padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 4),
-              decoration: BoxDecoration(
-                color: AppColors.field,
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: Row(
-                children: [
-                  _Stat(
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                if (totals.breastCount > 0)
+                  _SummaryChip(
                     type: EntryType.breast,
-                    value: formatDuration(totals.breast).replaceAll(RegExp(r' \d+ s$'), ''),
-                    label: 'breastfed',
+                    value: formatDuration(totals.breast),
+                    label: 'breastfeeding',
                   ),
-                  _Stat(type: EntryType.bottle, value: '${totals.totalMl} ml', label: 'bottle'),
-                  _Stat(type: EntryType.pump, value: '${totals.pumpMl} ml', label: 'pumped'),
-                  _Stat(
+                if (totals.anyBottleCount > 0)
+                  _SummaryChip(
+                    type: EntryType.bottle,
+                    value: '${totals.totalMl} ml',
+                    label: 'bottle',
+                  ),
+                if (totals.pumpCount > 0)
+                  _SummaryChip(
+                    type: EntryType.pump,
+                    value: '${totals.pumpMl} ml',
+                    label: 'pumped',
+                  ),
+                if (totals.diaperCount > 0)
+                  _SummaryChip(
                     type: EntryType.diaper,
                     value: '${totals.diaperCount}',
                     label: totals.diaperCount == 1 ? 'diaper' : 'diapers',
                   ),
-                ],
-              ),
+              ],
             ),
           ],
           const SizedBox(height: 20),
@@ -350,9 +356,9 @@ class _TodayScreenState extends State<TodayScreen> {
   }
 }
 
-/// One day total in the summary strip: a small icon, the value, a word.
-class _Stat extends StatelessWidget {
-  const _Stat({required this.type, required this.value, required this.label});
+/// A day total in the summary row: the kind's icon, a value and a word.
+class _SummaryChip extends StatelessWidget {
+  const _SummaryChip({required this.type, required this.value, required this.label});
 
   final EntryType type;
   final String value;
@@ -360,59 +366,27 @@ class _Stat extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Expanded(
-      child: Column(
+    return Container(
+      padding: const EdgeInsets.fromLTRB(4, 4, 12, 4),
+      decoration: BoxDecoration(
+        color: AppColors.field,
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
         children: [
-          EntryIcon(type: type, size: 24),
-          const SizedBox(height: 6),
-          FittedBox(
-            fit: BoxFit.scaleDown,
-            child: Text(
-              value,
-              style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
+          EntryIcon(type: type, size: 26),
+          const SizedBox(width: 8),
+          Text.rich(
+            TextSpan(
+              children: [
+                TextSpan(text: value, style: const TextStyle(fontWeight: FontWeight.w700)),
+                TextSpan(text: ' $label', style: const TextStyle(color: AppColors.muted)),
+              ],
             ),
-          ),
-          FittedBox(
-            fit: BoxFit.scaleDown,
-            child: Text(label, style: const TextStyle(fontSize: 12, color: AppColors.muted)),
+            style: const TextStyle(fontSize: 14, color: AppColors.ink),
           ),
         ],
-      ),
-    );
-  }
-}
-
-class _AddFeedingButton extends StatelessWidget {
-  const _AddFeedingButton({required this.onTap});
-
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      color: Colors.white.withValues(alpha: 0.14),
-      borderRadius: BorderRadius.circular(18),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(18),
-        onTap: onTap,
-        child: const Padding(
-          padding: EdgeInsets.symmetric(horizontal: 20, vertical: 22),
-          child: Row(
-            children: [
-              Expanded(
-                child: Text(
-                  'Add an entry',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 19,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-              ),
-              Icon(Icons.add, color: Colors.white, size: 28),
-            ],
-          ),
-        ),
       ),
     );
   }
