@@ -236,12 +236,12 @@ void main() {
     expect(
         tester.widget<FilledButton>(find.widgetWithText(FilledButton, 'Finish')).onPressed, isNull);
 
-    await tester.tap(find.text('Start left'));
+    await tester.tap(find.text('Left'));
     await tester.pump();
     expect(find.text('Timing left side'), findsOneWidget);
 
     // Switch to the right side, let a second pass, then finish and save.
-    await tester.tap(find.textContaining('Right 00:'));
+    await tester.tap(find.text('Right'));
     await tester.pump();
     expect(find.text('Timing right side'), findsOneWidget);
     await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 1100)));

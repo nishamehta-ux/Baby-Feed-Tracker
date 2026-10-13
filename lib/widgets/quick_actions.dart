@@ -211,88 +211,116 @@ class _LiveTimerCardState extends State<LiveTimerCard> {
                 : 'Timing';
 
     return Container(
-      padding: const EdgeInsets.fromLTRB(16, 14, 16, 12),
-      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(18)),
+      padding: const EdgeInsets.fromLTRB(20, 14, 12, 20),
+      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(22)),
       child: Column(
         children: [
+          // Header: what is being timed, and a way out.
           Row(
             children: [
-              EntryIcon(type: live.type, size: 40),
-              const SizedBox(width: 12),
+              EntryIcon(type: live.type, size: 30),
+              const SizedBox(width: 10),
               Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      isBreast ? 'Breastfeeding' : 'Pumping',
-                      style: const TextStyle(
-                          fontSize: 17, fontWeight: FontWeight.w700, color: AppColors.ink),
-                    ),
-                    Text(status, style: const TextStyle(color: AppColors.muted)),
-                  ],
+                child: Text(
+                  isBreast ? 'Breastfeeding' : 'Pumping',
+                  style: const TextStyle(
+                      fontSize: 16, fontWeight: FontWeight.w700, color: AppColors.ink),
                 ),
               ),
-              Text(
-                formatClock(live.total(now)),
-                style: const TextStyle(
-                  fontSize: 32,
-                  color: AppColors.ink,
-                  fontFeatures: [FontFeature.tabularFigures()],
-                ),
+              IconButton(
+                onPressed: _discard,
+                tooltip: live.notStarted ? 'Cancel' : 'Discard',
+                icon: const Icon(Icons.close, color: AppColors.muted),
               ),
             ],
           ),
-          const SizedBox(height: 12),
-          if (isBreast)
-            Row(
+          const SizedBox(height: 8),
+          // The clock is the focus of the card.
+          Padding(
+            padding: const EdgeInsets.only(right: 8),
+            child: Column(
               children: [
-                for (final s in BreastSide.values) ...[
-                  if (s == BreastSide.right) const SizedBox(width: 10),
-                  Expanded(
-                    child: _SideButton(
-                      label: s == BreastSide.left ? 'Left' : 'Right',
-                      time: live.notStarted ? null : formatClock(live.onSide(s, now)),
-                      wasLastSide: live.notStarted && lastSide == s,
-                      running: live.running && live.side == s,
-                      onTap: () => widget.store.setLive(live.toggled(DateTime.now(), s)),
+                FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Text(
+                    formatClock(live.total(now)),
+                    style: TextStyle(
+                      fontSize: 56,
+                      height: 1.1,
+                      letterSpacing: -1,
+                      color: live.notStarted ? AppColors.muted : AppColors.ink,
+                      fontFeatures: const [FontFeature.tabularFigures()],
                     ),
                   ),
-                ],
+                ),
+                const SizedBox(height: 4),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    if (live.running) ...[
+                      Container(
+                        width: 8,
+                        height: 8,
+                        decoration: const BoxDecoration(
+                          color: AppColors.sage,
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                      const SizedBox(width: 6),
+                    ],
+                    Flexible(
+                      child: Text(
+                        status,
+                        style: const TextStyle(fontSize: 14, color: AppColors.muted),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 20),
+                if (isBreast)
+                  Row(
+                    children: [
+                      for (final s in BreastSide.values) ...[
+                        if (s == BreastSide.right) const SizedBox(width: 12),
+                        Expanded(
+                          child: _ControlTile(
+                            title: s == BreastSide.left ? 'Left' : 'Right',
+                            detail: live.notStarted ? 'Start' : formatClock(live.onSide(s, now)),
+                            tag: live.notStarted && lastSide == s ? 'last side' : null,
+                            running: live.running && live.side == s,
+                            semanticsLabel: live.notStarted
+                                ? 'Start ${s.name} side'
+                                    '${lastSide == s ? ', the side the last feed ended on' : ''}'
+                                : '${s.name} side, ${formatClock(live.onSide(s, now))}, '
+                                    '${live.running && live.side == s ? 'running, tap to pause' : 'tap to time this side'}',
+                            onTap: () => widget.store.setLive(live.toggled(DateTime.now(), s)),
+                          ),
+                        ),
+                      ],
+                    ],
+                  )
+                else
+                  _ControlTile(
+                    title: live.running ? 'Pause' : (live.notStarted ? 'Start' : 'Resume'),
+                    running: live.running,
+                    semanticsLabel: live.running ? 'Pause' : 'Start',
+                    onTap: () => widget.store.setLive(live.toggled(DateTime.now())),
+                  ),
+                const SizedBox(height: 12),
+                SizedBox(
+                  width: double.infinity,
+                  child: FilledButton(
+                    onPressed: live.notStarted ? null : widget.onFinish,
+                    style: FilledButton.styleFrom(
+                      minimumSize: const Size.fromHeight(50),
+                      shape: const StadiumBorder(),
+                      textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+                    ),
+                    child: const Text('Finish'),
+                  ),
+                ),
               ],
-            )
-          else
-            SizedBox(
-              width: double.infinity,
-              child: OutlinedButton.icon(
-                onPressed: () => widget.store.setLive(live.toggled(DateTime.now())),
-                icon: Icon(live.running ? Icons.pause : Icons.play_arrow),
-                label: Text(live.running ? 'Pause' : (live.notStarted ? 'Start' : 'Resume')),
-                style: OutlinedButton.styleFrom(
-                  minimumSize: const Size.fromHeight(46),
-                  foregroundColor: AppColors.ink,
-                  side: const BorderSide(color: AppColors.ink, width: 1.25),
-                  shape: const StadiumBorder(),
-                ),
-              ),
             ),
-          const SizedBox(height: 8),
-          Row(
-            children: [
-              TextButton(
-                onPressed: _discard,
-                style: TextButton.styleFrom(foregroundColor: AppColors.danger),
-                child: Text(live.notStarted ? 'Cancel' : 'Discard'),
-              ),
-              const Spacer(),
-              FilledButton(
-                onPressed: live.notStarted ? null : widget.onFinish,
-                style: FilledButton.styleFrom(
-                  minimumSize: const Size(120, 44),
-                  shape: const StadiumBorder(),
-                ),
-                child: const Text('Finish'),
-              ),
-            ],
           ),
         ],
       ),
@@ -300,69 +328,94 @@ class _LiveTimerCardState extends State<LiveTimerCard> {
   }
 }
 
-class _SideButton extends StatelessWidget {
-  const _SideButton({
-    required this.label,
-    required this.time,
+/// A big tap target on the timer card: a breast side with its time, or the
+/// pump's start/pause. Filled while it is the one running.
+class _ControlTile extends StatelessWidget {
+  const _ControlTile({
+    required this.title,
     required this.running,
     required this.onTap,
-    this.wasLastSide = false,
+    required this.semanticsLabel,
+    this.detail,
+    this.tag,
   });
 
-  final String label;
+  final String title;
 
-  /// Null before the timer has started: the button reads "Start left".
-  final String? time;
-  final bool running;
-  final VoidCallback onTap;
+  /// "Start" before timing, else the time on this side.
+  final String? detail;
 
   /// Marks the side the previous feed ended on, to help alternate.
-  final bool wasLastSide;
+  final String? tag;
+  final bool running;
+  final VoidCallback onTap;
+  final String semanticsLabel;
 
   @override
   Widget build(BuildContext context) {
     final fg = running ? Colors.white : AppColors.ink;
+    final sub = running ? Colors.white70 : AppColors.muted;
     return Semantics(
       button: true,
-      label: time == null
-          ? 'Start $label side${wasLastSide ? ', the side the last feed ended on' : ''}'
-          : '$label side, $time, ${running ? 'running, tap to pause' : 'tap to time this side'}',
+      label: semanticsLabel,
       child: Material(
-        color: running ? AppColors.indigo : Colors.white,
-        shape: StadiumBorder(side: BorderSide(color: AppColors.ink, width: running ? 0 : 1.25)),
+        color: running ? AppColors.indigo : AppColors.field,
+        borderRadius: BorderRadius.circular(16),
         child: InkWell(
-          customBorder: const StadiumBorder(),
+          borderRadius: BorderRadius.circular(16),
           onTap: onTap,
-          child: SizedBox(
-            height: 46,
-            child: ExcludeSemantics(
+          child: ExcludeSemantics(
+            child: Container(
+              height: detail == null ? 56 : 76,
+              padding: const EdgeInsets.symmetric(horizontal: 12),
               child: FittedBox(
                 fit: BoxFit.scaleDown,
-                child: Row(
+                child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(running ? Icons.pause : Icons.play_arrow, color: fg, size: 20),
-                    const SizedBox(width: 6),
-                    Text(
-                      time == null ? 'Start ${label.toLowerCase()}' : '$label $time',
-                      style: TextStyle(
-                        fontWeight: FontWeight.w700,
-                        color: fg,
-                        fontFeatures: const [FontFeature.tabularFigures()],
-                      ),
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        if (detail == null) ...[
+                          Icon(running ? Icons.pause : Icons.play_arrow, color: fg, size: 22),
+                          const SizedBox(width: 6),
+                        ],
+                        Text(
+                          title,
+                          style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700, color: fg),
+                        ),
+                        if (tag != null) ...[
+                          const SizedBox(width: 8),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: AppColors.cream,
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                            child: Text(
+                              tag!,
+                              style: const TextStyle(fontSize: 11, color: AppColors.ink),
+                            ),
+                          ),
+                        ],
+                      ],
                     ),
-                    if (wasLastSide) ...[
-                      const SizedBox(width: 8),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                        decoration: BoxDecoration(
-                          color: AppColors.cream,
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                        child: const Text(
-                          'last side',
-                          style: TextStyle(fontSize: 12, color: AppColors.ink),
-                        ),
+                    if (detail != null) ...[
+                      const SizedBox(height: 4),
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(running ? Icons.pause : Icons.play_arrow, color: sub, size: 16),
+                          const SizedBox(width: 4),
+                          Text(
+                            detail!,
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: sub,
+                              fontFeatures: const [FontFeature.tabularFigures()],
+                            ),
+                          ),
+                        ],
                       ),
                     ],
                   ],
