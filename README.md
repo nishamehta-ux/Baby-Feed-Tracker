@@ -16,7 +16,7 @@ A simple Flutter app for logging a baby's feeds, pumping, diapers, routines and 
   - Every entry has a time and notes. Closing a drawer with unsaved input asks first; editing an entry adds *Delete entry*.
 - **Two tabs**
   - **Today** (landing page): *Add a feeding*, a *Last feeding* card (how long ago and how much), a **Summary** for *Today* or the *Last 24 h* (a count per kind: breastfeeding time with left/right, bottle total split into breast milk and formula, amount pumped, wet/dirty/dry diapers, routines, and the latest Other entries such as "Weight 3.9 kg"), and the **Timeline** of everything logged. Arrows step back through earlier days. Tap a feeding to edit it, swipe left to delete it (with undo).
-  - **Week**: the average per day for breastfeeding, formula, breast milk by bottle, pumping and diapers, the change on last week, and a small line showing the last 8 weeks. Below that is a list of the days; tap one to open it on the Today tab. Current-week averages count finished days only.
+  - **Trends**: for the week on screen (arrows go back), the average per day of breastfeeding, formula, breast milk by bottle, pumping and diapers, compared with last week; how many times each routine happened, against last week; and **Measurements**: every number logged under Other (weight, height, head size, temperature, or your own) with its latest reading and the change since the one before. Each row has a small line of the last 8 weeks or latest readings; tap it for a full chart (tap the chart to read a point) and every value. Below that is a list of the days; tap one to open it on the Today tab. Current-week averages count finished days only.
 - The baby's name can be edited by tapping it.
 - Data is stored on the device with `shared_preferences`.
 
@@ -49,19 +49,21 @@ lib/
   theme.dart                   colours and theme
   models/entry.dart            Entry model (every kind of entry) + JSON
   models/summary.dart          daily/weekly totals and formatting
+  models/trends.dart           measurement series and routine counts
   data/entry_store.dart        in-memory store persisted to shared_preferences
   screens/main_shell.dart      bottom tabs (Today, Week)
   screens/today_screen.dart    landing page: last feeding, summary, timeline
   screens/entry_sheet.dart     add/edit drawers for every kind of entry
-  screens/week_screen.dart     weekly summary
-  widgets/                     logo, routine and Other presets, shared UI
+  screens/trends_screen.dart   Trends tab
+  screens/trend_sheet.dart     full chart of one trend
+  widgets/                     logo, presets, sparkline, trend chart, shared UI
 ```
 
 ## Screenshots
 
-| Today | Add menu | Week |
-|---|---|---|
-| ![](docs/screenshots/day.png) | ![](docs/screenshots/add_menu.png) | ![](docs/screenshots/week.png) |
+| Today | Add menu | Trends | Weight chart |
+|---|---|---|---|
+| ![](docs/screenshots/day.png) | ![](docs/screenshots/add_menu.png) | ![](docs/screenshots/week.png) | ![](docs/screenshots/trend_weight.png) |
 
 | Breastfeeding | Bottle | Pumping | Diaper | Routine | Other |
 |---|---|---|---|---|---|

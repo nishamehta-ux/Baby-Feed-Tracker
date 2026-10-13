@@ -4,9 +4,9 @@ import '../data/entry_store.dart';
 import '../models/summary.dart';
 import '../theme.dart';
 import 'today_screen.dart';
-import 'week_screen.dart';
+import 'trends_screen.dart';
 
-/// Bottom navigation between the Today landing page and the weekly summary.
+/// Bottom navigation between the Today landing page and Trends.
 class MainShell extends StatefulWidget {
   const MainShell({super.key, required this.store});
 
@@ -40,7 +40,7 @@ class _MainShellState extends State<MainShell> {
         index: _tab,
         children: [
           TodayScreen(store: widget.store, day: _day),
-          WeekScreen(store: widget.store, onOpenDay: _openDay),
+          TrendsScreen(store: widget.store, onOpenDay: _openDay),
         ],
       ),
       bottomNavigationBar: NavigationBar(
@@ -61,7 +61,7 @@ class _MainShellState extends State<MainShell> {
           NavigationDestination(
             icon: Icon(Icons.insights_outlined),
             selectedIcon: Icon(Icons.insights),
-            label: 'Week',
+            label: 'Trends',
           ),
         ],
       ),

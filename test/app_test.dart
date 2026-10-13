@@ -64,10 +64,10 @@ void main() {
     expect(find.text('30 ml breast milk'), findsOneWidget);
     expect(find.text('Timeline'), findsOneWidget);
 
-    // The week tab lists today; tapping it comes back to the Today summary.
-    await tester.tap(find.text('Week'));
+    // The Trends tab lists today; tapping it comes back to the Today summary.
+    await tester.tap(find.text('Trends'));
     await tester.pumpAndSettle();
-    expect(find.text('Weekly summary'), findsOneWidget);
+    expect(find.text('Average per day'), findsOneWidget);
     final dayRow = find.textContaining('30 ml formula · 30 ml breast milk');
     await tester.ensureVisible(dayRow);
     await tester.pumpAndSettle();
@@ -188,5 +188,35 @@ void main() {
 
     final e = store.entries.single;
     expect((e.type, e.title, e.value), (EntryType.other, 'Doctor visit', ''));
+  });
+
+  testWidgets('trends show measurements and open their chart', (tester) async {
+    final store = await _startApp(tester);
+    final now = DateTime.now();
+    Entry weight(int daysAgo, String kg) => Entry(
+          id: 'w$daysAgo',
+          type: EntryType.other,
+          start: DateTime(now.year, now.month, now.day - daysAgo, 9),
+          end: DateTime(now.year, now.month, now.day - daysAgo, 9),
+          title: 'Weight',
+          value: kg,
+          unit: 'kg',
+        );
+    await store.upsert(weight(14, '3.9'));
+    await store.upsert(weight(7, '4.1'));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Trends'));
+    await tester.pumpAndSettle();
+    final row = find.text('4.1 kg');
+    await tester.ensureVisible(row);
+    await tester.pumpAndSettle();
+    expect(find.text('Measurements'), findsOneWidget);
+    expect(find.textContaining('+0.2 kg since'), findsOneWidget);
+
+    await tester.tap(row);
+    await tester.pumpAndSettle();
+    expect(find.text('All values'), findsOneWidget);
+    expect(find.text('3.9 kg'), findsWidgets);
   });
 }
