@@ -74,11 +74,11 @@ class _MarkPainter extends CustomPainter {
         ..moveTo(47, 23)
         ..cubicTo(40, 15, 46, 6, 54, 9)
         ..cubicTo(60, 11, 59, 19, 53, 19),
-      stroke(AppColors.cream, 5),
+      stroke(AppColors.taupe, 5),
     );
 
     // Face and cheeks.
-    canvas.drawCircle(const Offset(50, 57), 35, Paint()..color = AppColors.cream);
+    canvas.drawCircle(const Offset(50, 57), 35, Paint()..color = AppColors.taupe);
     final cheek = Paint()..color = AppColors.rose;
     canvas.drawCircle(const Offset(30, 66), 5, cheek);
     canvas.drawCircle(const Offset(70, 66), 5, cheek);

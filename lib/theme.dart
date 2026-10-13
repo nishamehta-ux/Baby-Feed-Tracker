@@ -3,9 +3,13 @@ import 'package:flutter/material.dart';
 import 'models/entry.dart';
 
 /// App palette, "Soft Pastel Shades": EDDCD2 · FFF1E6 · FDE2E4 · FAD2E1 ·
-/// C5DEDD · DBE7E4 · F0EFEB · D6E2E9 · BCD4E6 · 99C1DE. All of them are light,
-/// so [navy], a deep step of the lagoon blue, carries text, the header and
-/// primary actions.
+/// C5DEDD · DBE7E4 · F0EFEB · D6E2E9 · BCD4E6 · 99C1DE.
+///
+/// Colour is kept to a few jobs so screens are quick to read:
+/// - a calm neutral base: [background] with white cards and charcoal [ink];
+/// - one action colour, [primary], for the main button on a screen;
+/// - one selection colour, [selected], for anything chosen or running;
+/// - one soft colour per group of entries: feeds, pumping, diapers, routines.
 class AppColors {
   static const taupe = Color(0xFFEDDCD2);
   static const cream = Color(0xFFFFF1E6);
@@ -17,34 +21,39 @@ class AppColors {
   static const mist = Color(0xFFD6E2E9);
   static const sky = Color(0xFFBCD4E6);
   static const blue = Color(0xFF99C1DE);
-  static const navy = Color(0xFF2E4A62);
 
-  static const primary = navy;
-  static const ink = navy;
-  static const muted = Color(0xFF66788A);
-  static const background = cream;
+  /// Deeper steps of the palette's blue, which is too light for text or for
+  /// white text on it.
+  static const slate = Color(0xFF263241);
+  static const ocean = Color(0xFF3D6E94);
 
-  /// The light blue band at the top of each tab.
-  static const header = sky;
+  static const primary = ocean;
+  static const ink = slate;
+  static const muted = Color(0xFF6B7480);
+  static const background = Color(0xFFF7F6F3);
+
+  /// The top of each tab: the page itself, so nothing heavy sits behind the
+  /// title.
+  static const header = background;
   static const field = linen;
   static const softBorder = sky;
   static const tag = blush;
-  static const divider = Color(0xFFE8E4DF);
+  static const divider = Color(0xFFE9E7E2);
   static const danger = Color(0xFFA33A2E);
 
   /// Selected and running states (segments, pills, a timed side). Kept apart
   /// from [primary], which is only for the main action on a screen.
-  static const selected = blue;
+  static const selected = sky;
   static const onSelected = ink;
 
-  /// Fill for each kind of entry: the icon tile, count badge and drawer header.
+  /// Fill for each kind of entry: the icon tile and the drawer header. Feeds
+  /// share one colour (their icons tell them apart), so the timeline reads
+  /// as feeds, pumping, diapers and routines at a glance.
   static Color forType(EntryType type) => switch (type) {
-        EntryType.breast => rose,
-        EntryType.bottle => taupe,
-        EntryType.breastMilk => lagoon,
-        EntryType.pump => blue,
-        EntryType.diaper => mist,
-        EntryType.routine => blush,
+        EntryType.breast || EntryType.bottle || EntryType.breastMilk => rose,
+        EntryType.pump => lagoon,
+        EntryType.diaper => taupe,
+        EntryType.routine => mint,
         EntryType.other => Colors.white,
       };
 
@@ -54,11 +63,9 @@ class AppColors {
   /// Deeper steps of the same hues for thin lines, which the pale fills are
   /// too light for on white.
   static Color lineForType(EntryType type) => switch (type) {
-        EntryType.breast => const Color(0xFFC25B85),
-        EntryType.bottle => const Color(0xFF9A7462),
-        EntryType.breastMilk => const Color(0xFF4E8B88),
-        EntryType.pump => const Color(0xFF3F78A6),
-        EntryType.diaper => const Color(0xFF6E8597),
+        EntryType.breast || EntryType.bottle || EntryType.breastMilk => const Color(0xFFC25B85),
+        EntryType.pump => const Color(0xFF4E8B88),
+        EntryType.diaper => const Color(0xFF9A7462),
         EntryType.routine || EntryType.other => muted,
       };
 }
@@ -94,10 +101,10 @@ class AppText {
 ThemeData buildTheme() {
   // Every role the Material widgets read is set from the palette, so no
   // generated colour (such as the default lilac) shows anywhere.
-  final scheme = ColorScheme.fromSeed(seedColor: AppColors.navy).copyWith(
-    primary: AppColors.navy,
+  final scheme = ColorScheme.fromSeed(seedColor: AppColors.primary).copyWith(
+    primary: AppColors.primary,
     onPrimary: Colors.white,
-    primaryContainer: AppColors.cream,
+    primaryContainer: AppColors.sky,
     onPrimaryContainer: AppColors.ink,
     secondary: AppColors.blue,
     onSecondary: AppColors.ink,
@@ -118,7 +125,7 @@ ThemeData buildTheme() {
     surfaceTint: Colors.transparent,
     outline: AppColors.muted,
     outlineVariant: AppColors.divider,
-    inverseSurface: AppColors.navy,
+    inverseSurface: AppColors.ink,
     onInverseSurface: Colors.white,
     inversePrimary: AppColors.blue,
     error: AppColors.danger,
@@ -167,7 +174,7 @@ ThemeData buildTheme() {
       ),
     ),
     snackBarTheme: const SnackBarThemeData(
-      backgroundColor: AppColors.navy,
+      backgroundColor: AppColors.ink,
       actionTextColor: AppColors.rose,
     ),
     dialogTheme: const DialogThemeData(backgroundColor: Colors.white),

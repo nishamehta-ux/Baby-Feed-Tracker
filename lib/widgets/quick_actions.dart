@@ -264,7 +264,7 @@ class _LiveTimerCardState extends State<LiveTimerCard> {
                         width: 8,
                         height: 8,
                         decoration: BoxDecoration(
-                          color: AppColors.lineForType(EntryType.breastMilk),
+                          color: AppColors.primary,
                           shape: BoxShape.circle,
                         ),
                       ),
