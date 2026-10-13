@@ -48,7 +48,7 @@ class _MainShellState extends State<MainShell> {
       floatingActionButton: _tab == 0
           ? FloatingActionButton.extended(
               onPressed: () => showAddMenu(context, widget.store),
-              backgroundColor: AppColors.indigo,
+              backgroundColor: AppColors.primary,
               foregroundColor: Colors.white,
               icon: const Icon(Icons.add_rounded),
               label: const Text('Add an entry'),

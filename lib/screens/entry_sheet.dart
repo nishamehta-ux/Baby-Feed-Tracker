@@ -603,7 +603,7 @@ class _EntrySheetState extends State<EntrySheet> {
               if (_error != null)
                 Container(
                   width: double.infinity,
-                  color: AppColors.sand,
+                  color: AppColors.tag,
                   padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
                   child: Row(
                     children: [
@@ -841,7 +841,7 @@ class _EntrySheetState extends State<EntrySheet> {
           _ChoiceCircle(
             label: 'Wet',
             selected: _wet,
-            color: AppColors.cream,
+            color: AppColors.selected,
             onTap: () => setState(() {
               _error = null;
               _wet = !_wet;
@@ -851,7 +851,7 @@ class _EntrySheetState extends State<EntrySheet> {
           _ChoiceCircle(
             label: 'Dirty',
             selected: _dirty,
-            color: AppColors.cream,
+            color: AppColors.selected,
             onTap: () => setState(() {
               _error = null;
               _dirty = !_dirty;
@@ -861,7 +861,7 @@ class _EntrySheetState extends State<EntrySheet> {
           _ChoiceCircle(
             label: 'Dry',
             selected: _dry,
-            color: AppColors.cream,
+            color: AppColors.selected,
             onTap: () => setState(() {
               _error = null;
               _dry = !_dry;
@@ -1201,7 +1201,7 @@ class _TimerBlock extends StatelessWidget {
               : Container(
                   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                   decoration:
-                      BoxDecoration(color: AppColors.cream, borderRadius: BorderRadius.circular(6)),
+                      BoxDecoration(color: AppColors.tag, borderRadius: BorderRadius.circular(6)),
                   child: Text(
                     tag!,
                     style: const TextStyle(

@@ -23,7 +23,7 @@ flutter_launcher_icons:
   android: true
   ios: true
   image_path: assets/branding/ohbaby_app_icon.png
-  adaptive_icon_background: "#413C58"
+  adaptive_icon_background: "#2E4A62"
   adaptive_icon_foreground: assets/branding/ohbaby_mark_foreground.png
   remove_alpha_ios: true
 

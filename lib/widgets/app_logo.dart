@@ -74,12 +74,12 @@ class _MarkPainter extends CustomPainter {
         ..moveTo(47, 23)
         ..cubicTo(40, 15, 46, 6, 54, 9)
         ..cubicTo(60, 11, 59, 19, 53, 19),
-      stroke(AppColors.sand, 5),
+      stroke(AppColors.cream, 5),
     );
 
     // Face and cheeks.
-    canvas.drawCircle(const Offset(50, 57), 35, Paint()..color = AppColors.sand);
-    final cheek = Paint()..color = AppColors.cream;
+    canvas.drawCircle(const Offset(50, 57), 35, Paint()..color = AppColors.cream);
+    final cheek = Paint()..color = AppColors.rose;
     canvas.drawCircle(const Offset(30, 66), 5, cheek);
     canvas.drawCircle(const Offset(70, 66), 5, cheek);
 
@@ -89,12 +89,12 @@ class _MarkPainter extends CustomPainter {
       ..quadraticBezierTo(39, 62, 45, 55)
       ..moveTo(55, 55)
       ..quadraticBezierTo(61, 62, 67, 55);
-    canvas.drawPath(eyes, stroke(AppColors.indigo, 4));
+    canvas.drawPath(eyes, stroke(AppColors.ink, 4));
 
     // "Oh" mouth.
     canvas.drawOval(
       Rect.fromCenter(center: const Offset(50, 71), width: 10, height: 12),
-      Paint()..color = AppColors.indigo,
+      Paint()..color = AppColors.ink,
     );
   }
 

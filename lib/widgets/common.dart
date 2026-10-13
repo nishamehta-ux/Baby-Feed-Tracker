@@ -101,8 +101,13 @@ class EntryIcon extends StatelessWidget {
   final double size;
   final IconData? icon;
 
+  /// Solid glyphs that fill their whole box (the heart) look bigger than the
+  /// rest at the same size, so they are drawn a little smaller.
+  static double opticalScale(IconData glyph) => glyph == Icons.favorite_rounded ? 0.84 : 1;
+
   @override
   Widget build(BuildContext context) {
+    final glyph = icon ?? iconForType(type);
     return Container(
       width: size,
       height: size,
@@ -111,7 +116,7 @@ class EntryIcon extends StatelessWidget {
         borderRadius: BorderRadius.circular(size * 0.3),
         border: type == EntryType.other ? Border.all(color: AppColors.ink, width: 1.25) : null,
       ),
-      child: Icon(icon ?? iconForType(type), color: AppColors.onType(type), size: size * 0.5),
+      child: Icon(glyph, color: AppColors.onType(type), size: size * 0.5 * opticalScale(glyph)),
     );
   }
 }

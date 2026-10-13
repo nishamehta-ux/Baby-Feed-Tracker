@@ -394,7 +394,7 @@ class _ControlTile extends StatelessWidget {
                           Container(
                             padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                             decoration: BoxDecoration(
-                              color: AppColors.cream,
+                              color: AppColors.tag,
                               borderRadius: BorderRadius.circular(6),
                             ),
                             child: Text(

@@ -2,55 +2,60 @@ import 'package:flutter/material.dart';
 
 import 'models/entry.dart';
 
-/// App palette: 413C58 · A3C4BC · BFD7B5 · E7EFC5 · F2DDA4.
+/// App palette, "Soft Pastel Shades": EDDCD2 · FFF1E6 · FDE2E4 · FAD2E1 ·
+/// C5DEDD · DBE7E4 · F0EFEB · D6E2E9 · BCD4E6 · 99C1DE. All of them are light,
+/// so [navy], a deep step of the lagoon blue, carries text, the header and
+/// primary actions.
 class AppColors {
-  static const indigo = Color(0xFF413C58);
-  static const sage = Color(0xFFA3C4BC);
-  static const mint = Color(0xFFBFD7B5);
-  static const cream = Color(0xFFE7EFC5);
-  static const sand = Color(0xFFF2DDA4);
+  static const taupe = Color(0xFFEDDCD2);
+  static const cream = Color(0xFFFFF1E6);
+  static const blush = Color(0xFFFDE2E4);
+  static const rose = Color(0xFFFAD2E1);
+  static const lagoon = Color(0xFFC5DEDD);
+  static const mint = Color(0xFFDBE7E4);
+  static const linen = Color(0xFFF0EFEB);
+  static const mist = Color(0xFFD6E2E9);
+  static const sky = Color(0xFFBCD4E6);
+  static const blue = Color(0xFF99C1DE);
+  static const navy = Color(0xFF2E4A62);
 
-  /// A light tint of indigo, for routines.
-  static const lavender = Color(0xFFD8D4EA);
-
-  static const primary = indigo;
-  static const ink = indigo;
-  static const muted = Color(0xFF6F6A85);
-  static const background = Color(0xFFF6F8EC);
-  static const field = Color(0xFFF1F3E6);
-  static const soft = cream;
-  static const softBorder = mint;
-  static const banner = cream;
-  static const divider = Color(0xFFE4E6D8);
+  static const primary = navy;
+  static const ink = navy;
+  static const muted = Color(0xFF66788A);
+  static const background = cream;
+  static const field = linen;
+  static const softBorder = sky;
+  static const tag = blush;
+  static const divider = Color(0xFFE8E4DF);
   static const danger = Color(0xFFA33A2E);
 
   /// Selected and running states (segments, pills, a timed side). Kept apart
   /// from [primary], which is only for the main action on a screen.
-  static const selected = sage;
+  static const selected = blue;
   static const onSelected = ink;
 
   /// Fill for each kind of entry: the icon tile, count badge and drawer header.
   static Color forType(EntryType type) => switch (type) {
-        EntryType.breast => indigo,
-        EntryType.bottle => sand,
-        EntryType.breastMilk => sage,
-        EntryType.pump => mint,
-        EntryType.diaper => cream,
-        EntryType.routine => lavender,
+        EntryType.breast => rose,
+        EntryType.bottle => taupe,
+        EntryType.breastMilk => lagoon,
+        EntryType.pump => blue,
+        EntryType.diaper => mist,
+        EntryType.routine => blush,
         EntryType.other => Colors.white,
       };
 
   /// Text and icons placed on a [forType] fill.
-  static Color onType(EntryType type) => type == EntryType.breast ? Colors.white : ink;
+  static Color onType(EntryType type) => ink;
 
   /// Deeper steps of the same hues for thin lines, which the pale fills are
   /// too light for on white.
   static Color lineForType(EntryType type) => switch (type) {
-        EntryType.breast => indigo,
-        EntryType.bottle => const Color(0xFFA87A28),
-        EntryType.breastMilk => const Color(0xFF4F8A7D),
-        EntryType.pump => const Color(0xFF5E8A55),
-        EntryType.diaper => const Color(0xFF7D8A3A),
+        EntryType.breast => const Color(0xFFC25B85),
+        EntryType.bottle => const Color(0xFF9A7462),
+        EntryType.breastMilk => const Color(0xFF4E8B88),
+        EntryType.pump => const Color(0xFF3F78A6),
+        EntryType.diaper => const Color(0xFF6E8597),
         EntryType.routine || EntryType.other => muted,
       };
 }
@@ -86,18 +91,18 @@ class AppText {
 ThemeData buildTheme() {
   // Every role the Material widgets read is set from the palette, so no
   // generated colour (such as the default lilac) shows anywhere.
-  final scheme = ColorScheme.fromSeed(seedColor: AppColors.indigo).copyWith(
-    primary: AppColors.indigo,
+  final scheme = ColorScheme.fromSeed(seedColor: AppColors.navy).copyWith(
+    primary: AppColors.navy,
     onPrimary: Colors.white,
     primaryContainer: AppColors.cream,
     onPrimaryContainer: AppColors.ink,
-    secondary: AppColors.sage,
+    secondary: AppColors.blue,
     onSecondary: AppColors.ink,
-    secondaryContainer: AppColors.mint,
+    secondaryContainer: AppColors.sky,
     onSecondaryContainer: AppColors.ink,
-    tertiary: AppColors.sand,
+    tertiary: AppColors.taupe,
     onTertiary: AppColors.ink,
-    tertiaryContainer: AppColors.sand,
+    tertiaryContainer: AppColors.taupe,
     onTertiaryContainer: AppColors.ink,
     surface: Colors.white,
     onSurface: AppColors.ink,
@@ -110,9 +115,9 @@ ThemeData buildTheme() {
     surfaceTint: Colors.transparent,
     outline: AppColors.muted,
     outlineVariant: AppColors.divider,
-    inverseSurface: AppColors.indigo,
+    inverseSurface: AppColors.navy,
     onInverseSurface: Colors.white,
-    inversePrimary: AppColors.sand,
+    inversePrimary: AppColors.blue,
     error: AppColors.danger,
     onError: Colors.white,
   );
@@ -159,8 +164,8 @@ ThemeData buildTheme() {
       ),
     ),
     snackBarTheme: const SnackBarThemeData(
-      backgroundColor: AppColors.indigo,
-      actionTextColor: AppColors.sand,
+      backgroundColor: AppColors.navy,
+      actionTextColor: AppColors.rose,
     ),
     dialogTheme: const DialogThemeData(backgroundColor: Colors.white),
     bottomSheetTheme: const BottomSheetThemeData(backgroundColor: Colors.white),
