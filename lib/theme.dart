@@ -4,7 +4,8 @@ import 'models/entry.dart';
 
 /// App palette. Main colours: taupe EDDCD2 · mint DBE7E4 · mist D6E2E9, on a
 /// linen F0EFEB page, plus a few added steps (lilac, charcoal, steel) where
-/// the three are not enough.
+/// the three are not enough. Light mode uses slightly richer steps of each
+/// (and a deeper page) for contrast; dark mode uses deep tones.
 ///
 /// Colour is kept to a few jobs so screens are quick to read:
 /// - a calm neutral base: [background] with [surface] cards and [ink] text;
@@ -34,11 +35,11 @@ class AppColors {
   static const slate = Color(0xFF263241);
   static const steel = Color(0xFF4F6A7E);
 
-  static Color get primary => _pick(steel, const Color(0xFFA9C3D6));
+  static Color get primary => _pick(const Color(0xFF3D5A70), const Color(0xFFA9C3D6));
   static Color get onPrimary => _pick(Colors.white, const Color(0xFF14191F));
   static Color get ink => _pick(slate, const Color(0xFFE8ECEF));
   static Color get muted => _pick(const Color(0xFF5C6570), const Color(0xFF9AA4AE));
-  static Color get background => _pick(linen, const Color(0xFF15191E));
+  static Color get background => _pick(const Color(0xFFE9E7E1), const Color(0xFF15191E));
 
   /// Cards and sheets.
   static Color get surface => _pick(Colors.white, const Color(0xFF1F252C));
@@ -48,15 +49,15 @@ class AppColors {
   static Color get header => background;
 
   /// Inset fills inside cards (chips, idle tiles, steppers).
-  static Color get field => _pick(const Color(0xFFF5F4F1), const Color(0xFF2A3139));
+  static Color get field => _pick(const Color(0xFFF1EFEA), const Color(0xFF2A3139));
   static Color get softBorder => _pick(mist, const Color(0xFF3A4D5C));
   static Color get tag => _pick(mint, const Color(0xFF33443E));
-  static Color get divider => _pick(const Color(0xFFE6E4DE), const Color(0xFF2F363E));
+  static Color get divider => _pick(const Color(0xFFE2DFD8), const Color(0xFF2F363E));
   static Color get danger => _pick(const Color(0xFFA33A2E), const Color(0xFFE58B7F));
 
   /// Selected and running states (segments, pills, a timed side). Kept apart
   /// from [primary], which is only for the main action on a screen.
-  static Color get selected => _pick(const Color(0xFFC3D4DF), const Color(0xFF44607A));
+  static Color get selected => _pick(const Color(0xFFB8CDDB), const Color(0xFF44607A));
   static Color get onSelected => ink;
 
   /// Fill for each kind of entry: the icon circle and the drawer header.
@@ -68,10 +69,10 @@ class AppColors {
         EntryType.breast ||
         EntryType.bottle ||
         EntryType.breastMilk =>
-          _pick(taupe, const Color(0xFF5C4A40)),
-        EntryType.pump => _pick(mist, const Color(0xFF3D5566)),
-        EntryType.diaper => _pick(mint, const Color(0xFF3C5850)),
-        EntryType.routine => _pick(lilac, const Color(0xFF4E4865)),
+          _pick(const Color(0xFFE8CFC0), const Color(0xFF5C4A40)),
+        EntryType.pump => _pick(const Color(0xFFC9DAE5), const Color(0xFF3D5566)),
+        EntryType.diaper => _pick(const Color(0xFFCBDFD8), const Color(0xFF3C5850)),
+        EntryType.routine => _pick(const Color(0xFFDDD5EA), const Color(0xFF4E4865)),
         EntryType.other => surface,
       };
 
@@ -111,8 +112,17 @@ class AppRadius {
   static const tile = 16.0;
 }
 
-/// Soft shadow for the one card on a screen that should stand out (the live
-/// timer); everything else sits flat.
+/// A light lift for cards and tiles in light mode, so white surfaces separate
+/// from the page; dark mode relies on the lighter card colour instead.
+List<BoxShadow> get cardShadow => AppColors.dark
+    ? const []
+    : const [
+        BoxShadow(color: Color(0x0F263241), blurRadius: 2, offset: Offset(0, 1)),
+        BoxShadow(color: Color(0x0D263241), blurRadius: 12, offset: Offset(0, 4)),
+      ];
+
+/// Stronger shadow for the one card on a screen that should stand out (the
+/// live timer).
 List<BoxShadow> get raisedShadow => [
       BoxShadow(
         color: AppColors.dark ? const Color(0x66000000) : const Color(0x1F263241),

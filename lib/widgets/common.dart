@@ -5,7 +5,8 @@ import '../models/entry.dart';
 import '../theme.dart';
 import 'app_logo.dart';
 
-/// White rounded card on the page. Flat: only the live timer is raised.
+/// White rounded card on the page, lifted slightly in light mode; the live
+/// timer is the one raised further.
 class AppCard extends StatelessWidget {
   const AppCard({super.key, required this.child});
 
@@ -19,6 +20,7 @@ class AppCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: AppColors.surface,
         borderRadius: BorderRadius.circular(AppRadius.card),
+        boxShadow: cardShadow,
       ),
       child: child,
     );

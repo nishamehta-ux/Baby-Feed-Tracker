@@ -109,39 +109,45 @@ class _Tile extends StatelessWidget {
     return Semantics(
       button: true,
       label: '$title, $subtitle',
-      child: Material(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(AppRadius.tile),
-        child: InkWell(
+      child: DecoratedBox(
+        decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(AppRadius.tile),
-          onTap: onTap,
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(10, 10, 16, 10),
-            child: ExcludeSemantics(
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  EntryIcon(type: type, size: EntryIcon.medium),
-                  const SizedBox(width: 10),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        title,
-                        style: TextStyle(
-                          fontWeight: FontWeight.w700,
-                          fontSize: AppText.body,
-                          color: AppColors.ink,
+          boxShadow: cardShadow,
+        ),
+        child: Material(
+          color: AppColors.surface,
+          borderRadius: BorderRadius.circular(AppRadius.tile),
+          child: InkWell(
+            borderRadius: BorderRadius.circular(AppRadius.tile),
+            onTap: onTap,
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(10, 10, 16, 10),
+              child: ExcludeSemantics(
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    EntryIcon(type: type, size: EntryIcon.medium),
+                    const SizedBox(width: 10),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          title,
+                          style: TextStyle(
+                            fontWeight: FontWeight.w700,
+                            fontSize: AppText.body,
+                            color: AppColors.ink,
+                          ),
                         ),
-                      ),
-                      Text(
-                        subtitle,
-                        style: TextStyle(fontSize: AppText.label, color: AppColors.muted),
-                      ),
-                    ],
-                  ),
-                ],
+                        Text(
+                          subtitle,
+                          style: TextStyle(fontSize: AppText.label, color: AppColors.muted),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
               ),
             ),
           ),
