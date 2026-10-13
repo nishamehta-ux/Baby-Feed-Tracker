@@ -2,8 +2,9 @@ import 'package:flutter/material.dart';
 
 import 'models/entry.dart';
 
-/// App palette, "Soft Pastel Shades": EDDCD2 · FFF1E6 · FDE2E4 · FAD2E1 ·
-/// C5DEDD · DBE7E4 · F0EFEB · D6E2E9 · BCD4E6 · 99C1DE.
+/// App palette. Main colours: taupe EDDCD2 · mint DBE7E4 · mist D6E2E9, on a
+/// linen F0EFEB page, plus a few added steps (lilac, charcoal, steel) where
+/// the three are not enough.
 ///
 /// Colour is kept to a few jobs so screens are quick to read:
 /// - a calm neutral base: [background] with white cards and charcoal [ink];
@@ -12,50 +13,53 @@ import 'models/entry.dart';
 /// - one soft colour per group of entries: feeds, pumping, diapers, routines.
 class AppColors {
   static const taupe = Color(0xFFEDDCD2);
-  static const cream = Color(0xFFFFF1E6);
-  static const blush = Color(0xFFFDE2E4);
-  static const rose = Color(0xFFFAD2E1);
-  static const lagoon = Color(0xFFC5DEDD);
   static const mint = Color(0xFFDBE7E4);
-  static const linen = Color(0xFFF0EFEB);
   static const mist = Color(0xFFD6E2E9);
-  static const sky = Color(0xFFBCD4E6);
-  static const blue = Color(0xFF99C1DE);
+  static const linen = Color(0xFFF0EFEB);
 
-  /// Deeper steps of the palette's blue, which is too light for text or for
-  /// white text on it.
+  /// Added to the main three so routines have their own soft fill.
+  static const lilac = Color(0xFFE6E1EE);
+
+  /// Deeper steps of the palette, which is too light for text or for white
+  /// text on it.
   static const slate = Color(0xFF263241);
-  static const ocean = Color(0xFF3D6E94);
+  static const steel = Color(0xFF4F6A7E);
 
-  static const primary = ocean;
+  static const primary = steel;
   static const ink = slate;
   static const muted = Color(0xFF6B7480);
-  static const background = Color(0xFFF7F6F3);
+  static const background = linen;
 
   /// The top of each tab: the page itself, so nothing heavy sits behind the
   /// title.
   static const header = background;
-  static const field = linen;
-  static const softBorder = sky;
-  static const tag = blush;
-  static const divider = Color(0xFFE9E7E2);
+
+  /// Inset fills inside white cards (chips, idle tiles, steppers).
+  static const field = Color(0xFFF5F4F1);
+  static const softBorder = mist;
+  static const tag = mint;
+  static const divider = Color(0xFFE6E4DE);
   static const danger = Color(0xFFA33A2E);
 
   /// Selected and running states (segments, pills, a timed side). Kept apart
   /// from [primary], which is only for the main action on a screen.
-  static const selected = sky;
+  static const selected = mist;
   static const onSelected = ink;
 
   /// Fill for each kind of entry: the icon tile and the drawer header. Feeds
   /// share one colour (their icons tell them apart), so the timeline reads
-  /// as feeds, pumping, diapers and routines at a glance.
+  /// as feeds, pumping, diapers and routines at a glance; Other is white with
+  /// an outline.
   static Color forType(EntryType type) => switch (type) {
-        EntryType.breast || EntryType.bottle || EntryType.breastMilk => rose,
-        EntryType.pump => lagoon,
-        EntryType.diaper => taupe,
-        EntryType.routine => mint,
+        EntryType.breast || EntryType.bottle || EntryType.breastMilk => taupe,
+        EntryType.pump => mist,
+        EntryType.diaper => mint,
+        EntryType.routine => lilac,
         EntryType.other => Colors.white,
       };
+
+  /// Kinds drawn as a white tile with an outline.
+  static bool outlined(EntryType type) => type == EntryType.other;
 
   /// Text and icons placed on a [forType] fill.
   static Color onType(EntryType type) => ink;
@@ -63,10 +67,11 @@ class AppColors {
   /// Deeper steps of the same hues for thin lines, which the pale fills are
   /// too light for on white.
   static Color lineForType(EntryType type) => switch (type) {
-        EntryType.breast || EntryType.bottle || EntryType.breastMilk => const Color(0xFFC25B85),
-        EntryType.pump => const Color(0xFF4E8B88),
-        EntryType.diaper => const Color(0xFF9A7462),
-        EntryType.routine || EntryType.other => muted,
+        EntryType.breast || EntryType.bottle || EntryType.breastMilk => const Color(0xFFA27B66),
+        EntryType.pump => const Color(0xFF5B7C93),
+        EntryType.diaper => const Color(0xFF5E8A7C),
+        EntryType.routine => const Color(0xFF7A6E94),
+        EntryType.other => muted,
       };
 }
 
@@ -104,11 +109,11 @@ ThemeData buildTheme() {
   final scheme = ColorScheme.fromSeed(seedColor: AppColors.primary).copyWith(
     primary: AppColors.primary,
     onPrimary: Colors.white,
-    primaryContainer: AppColors.sky,
+    primaryContainer: AppColors.mist,
     onPrimaryContainer: AppColors.ink,
-    secondary: AppColors.blue,
+    secondary: AppColors.mist,
     onSecondary: AppColors.ink,
-    secondaryContainer: AppColors.sky,
+    secondaryContainer: AppColors.mist,
     onSecondaryContainer: AppColors.ink,
     tertiary: AppColors.taupe,
     onTertiary: AppColors.ink,
@@ -127,7 +132,7 @@ ThemeData buildTheme() {
     outlineVariant: AppColors.divider,
     inverseSurface: AppColors.ink,
     onInverseSurface: Colors.white,
-    inversePrimary: AppColors.blue,
+    inversePrimary: AppColors.mist,
     error: AppColors.danger,
     onError: Colors.white,
   );
@@ -175,7 +180,7 @@ ThemeData buildTheme() {
     ),
     snackBarTheme: const SnackBarThemeData(
       backgroundColor: AppColors.ink,
-      actionTextColor: AppColors.rose,
+      actionTextColor: AppColors.taupe,
     ),
     dialogTheme: const DialogThemeData(backgroundColor: Colors.white),
     bottomSheetTheme: const BottomSheetThemeData(backgroundColor: Colors.white),

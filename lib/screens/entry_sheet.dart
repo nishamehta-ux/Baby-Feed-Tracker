@@ -558,7 +558,7 @@ class _EntrySheetState extends State<EntrySheet> {
     // Bottle drawers keep the sand header whichever contents are chosen.
     final headerType = _type.isBottle ? EntryType.bottle : _type;
     final headerColor =
-        headerType == EntryType.other ? AppColors.field : AppColors.forType(headerType);
+        AppColors.outlined(headerType) ? AppColors.field : AppColors.forType(headerType);
     final onHeader = AppColors.onType(headerType);
 
     return FractionallySizedBox(

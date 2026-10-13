@@ -20,7 +20,7 @@ Future<void> showTrendSheet(
   required String Function(TrendPoint) rowLabel,
   bool zeroBased = true,
 }) {
-  final header = type == EntryType.other ? AppColors.field : AppColors.forType(type);
+  final header = AppColors.outlined(type) ? AppColors.field : AppColors.forType(type);
   final onHeader = AppColors.onType(type);
   return showModalBottomSheet<void>(
     context: context,

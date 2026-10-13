@@ -114,7 +114,7 @@ class EntryIcon extends StatelessWidget {
       decoration: BoxDecoration(
         color: AppColors.forType(type),
         borderRadius: BorderRadius.circular(size * 0.3),
-        border: type == EntryType.other ? Border.all(color: AppColors.ink, width: 1.25) : null,
+        border: AppColors.outlined(type) ? Border.all(color: AppColors.ink, width: 1.25) : null,
       ),
       child: Icon(glyph, color: AppColors.onType(type), size: size * 0.5 * opticalScale(glyph)),
     );

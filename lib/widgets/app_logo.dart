@@ -79,7 +79,7 @@ class _MarkPainter extends CustomPainter {
 
     // Face and cheeks.
     canvas.drawCircle(const Offset(50, 57), 35, Paint()..color = AppColors.taupe);
-    final cheek = Paint()..color = AppColors.rose;
+    final cheek = Paint()..color = const Color(0xFFE2C3B3);
     canvas.drawCircle(const Offset(30, 66), 5, cheek);
     canvas.drawCircle(const Offset(70, 66), 5, cheek);
 
