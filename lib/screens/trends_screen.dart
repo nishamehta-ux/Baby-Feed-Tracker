@@ -137,11 +137,11 @@ class _TrendsScreenState extends State<TrendsScreen> {
                     SegmentedButton<Period>(
                       showSelectedIcon: false,
                       style: SegmentedButton.styleFrom(
-                        backgroundColor: Colors.white.withValues(alpha: 0.14),
-                        foregroundColor: Colors.white,
-                        selectedBackgroundColor: Colors.white,
-                        selectedForegroundColor: AppColors.ink,
-                        side: const BorderSide(color: Colors.white54),
+                        backgroundColor: Colors.white,
+                        foregroundColor: AppColors.ink,
+                        selectedBackgroundColor: AppColors.selected,
+                        selectedForegroundColor: AppColors.onSelected,
+                        side: const BorderSide(color: Colors.white),
                       ),
                       segments: const [
                         ButtonSegment(value: Period.week, label: Text('Week')),

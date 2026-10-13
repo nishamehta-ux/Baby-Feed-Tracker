@@ -23,6 +23,9 @@ class AppColors {
   static const ink = navy;
   static const muted = Color(0xFF66788A);
   static const background = cream;
+
+  /// The light blue band at the top of each tab.
+  static const header = sky;
   static const field = linen;
   static const softBorder = sky;
   static const tag = blush;
@@ -129,7 +132,7 @@ ThemeData buildTheme() {
     textTheme: const TextTheme(
       headlineMedium: TextStyle(
         fontWeight: FontWeight.w800,
-        color: Colors.white,
+        color: AppColors.ink,
       ),
       titleLarge:
           TextStyle(fontSize: AppText.headline, fontWeight: FontWeight.w800, color: AppColors.ink),

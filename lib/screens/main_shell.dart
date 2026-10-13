@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../data/entry_store.dart';
 import '../models/summary.dart';
@@ -36,45 +37,49 @@ class _MainShellState extends State<MainShell> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: IndexedStack(
-        index: _tab,
-        children: [
-          TodayScreen(store: widget.store, day: _day),
-          TrendsScreen(store: widget.store, onOpenDay: _openDay),
-        ],
-      ),
-      // Adding an entry is the main action on Today.
-      floatingActionButton: _tab == 0
-          ? FloatingActionButton.extended(
-              onPressed: () => showAddMenu(context, widget.store),
-              backgroundColor: AppColors.primary,
-              foregroundColor: Colors.white,
-              icon: const Icon(Icons.add_rounded),
-              label: const Text('Add an entry'),
-            )
-          : null,
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: _tab,
-        backgroundColor: Colors.white,
-        indicatorColor: AppColors.selected,
-        onDestinationSelected: (i) {
-          // Coming back to Today from the tab bar shows today again.
-          if (i == 0 && _tab != 0) _day.value = dateOnly(DateTime.now());
-          setState(() => _tab = i);
-        },
-        destinations: const [
-          NavigationDestination(
-            icon: Icon(Icons.today_outlined),
-            selectedIcon: Icon(Icons.today_rounded),
-            label: 'Today',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.insights_outlined),
-            selectedIcon: Icon(Icons.insights_rounded),
-            label: 'Trends',
-          ),
-        ],
+    // Dark status bar icons over the light header.
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: SystemUiOverlayStyle.dark,
+      child: Scaffold(
+        body: IndexedStack(
+          index: _tab,
+          children: [
+            TodayScreen(store: widget.store, day: _day),
+            TrendsScreen(store: widget.store, onOpenDay: _openDay),
+          ],
+        ),
+        // Adding an entry is the main action on Today.
+        floatingActionButton: _tab == 0
+            ? FloatingActionButton.extended(
+                onPressed: () => showAddMenu(context, widget.store),
+                backgroundColor: AppColors.primary,
+                foregroundColor: Colors.white,
+                icon: const Icon(Icons.add_rounded),
+                label: const Text('Add an entry'),
+              )
+            : null,
+        bottomNavigationBar: NavigationBar(
+          selectedIndex: _tab,
+          backgroundColor: Colors.white,
+          indicatorColor: AppColors.selected,
+          onDestinationSelected: (i) {
+            // Coming back to Today from the tab bar shows today again.
+            if (i == 0 && _tab != 0) _day.value = dateOnly(DateTime.now());
+            setState(() => _tab = i);
+          },
+          destinations: const [
+            NavigationDestination(
+              icon: Icon(Icons.today_outlined),
+              selectedIcon: Icon(Icons.today_rounded),
+              label: 'Today',
+            ),
+            NavigationDestination(
+              icon: Icon(Icons.insights_outlined),
+              selectedIcon: Icon(Icons.insights_rounded),
+              label: 'Trends',
+            ),
+          ],
+        ),
       ),
     );
   }

@@ -19,9 +19,9 @@ class AppMark extends StatelessWidget {
 }
 
 /// Mark plus the "Oh baby baby!" wordmark (in Nunito, the logo's typeface), for use
-/// on the indigo header.
+/// on the header.
 class AppLogo extends StatelessWidget {
-  const AppLogo({super.key, this.height = 30, this.color = Colors.white});
+  const AppLogo({super.key, this.height = 30, this.color = AppColors.ink});
 
   static const name = 'Oh baby baby!';
 

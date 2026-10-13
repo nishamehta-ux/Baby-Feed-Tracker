@@ -105,7 +105,7 @@ class _TodayScreenState extends State<TodayScreen> {
                   ],
                   const Text(
                     'Quick add',
-                    style: TextStyle(color: Colors.white70, fontWeight: FontWeight.w700),
+                    style: TextStyle(color: AppColors.ink, fontWeight: FontWeight.w700),
                   ),
                   const SizedBox(height: 8),
                   QuickActions(store: store, onLogged: _offerUndoLogged),
@@ -184,7 +184,7 @@ class _TodayScreenState extends State<TodayScreen> {
             ),
           ),
           const SizedBox(width: 8),
-          const Icon(Icons.edit_rounded, color: Colors.white70, size: 20),
+          const Icon(Icons.edit_rounded, color: AppColors.ink, size: 20),
         ],
       ),
     );

@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import '../models/entry.dart';
 import '../theme.dart';
 
-/// White rounded card that sits on top of the indigo header.
+/// White rounded card that sits on top of the header.
 class AppCard extends StatelessWidget {
   const AppCard({super.key, required this.child});
 
@@ -26,7 +26,7 @@ class AppCard extends StatelessWidget {
   }
 }
 
-/// Indigo background with a gently curved bottom edge, as in the design.
+/// Light blue header background with a gently curved bottom edge.
 class HeaderBackground extends StatelessWidget {
   const HeaderBackground({super.key, required this.height});
 
@@ -36,12 +36,12 @@ class HeaderBackground extends StatelessWidget {
   Widget build(BuildContext context) {
     return ClipPath(
       clipper: _CurveClipper(),
-      child: Container(height: height, color: AppColors.primary),
+      child: Container(height: height, color: AppColors.header),
     );
   }
 }
 
-/// The indigo header as a panel that grows with its [child], with the same
+/// The header as a panel that grows with its [child], with the same
 /// curved bottom edge as [HeaderBackground].
 class HeaderPanel extends StatelessWidget {
   const HeaderPanel({super.key, required this.child, this.padding = EdgeInsets.zero});
@@ -55,7 +55,7 @@ class HeaderPanel extends StatelessWidget {
       clipper: _CurveClipper(),
       child: Container(
         width: double.infinity,
-        color: AppColors.primary,
+        color: AppColors.header,
         padding: padding,
         child: child,
       ),
