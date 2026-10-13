@@ -10,6 +10,7 @@ import '../widgets/app_logo.dart';
 import '../widgets/common.dart';
 import '../widgets/presets.dart';
 import '../widgets/sparkline.dart';
+import '../widgets/timeline_tile.dart';
 import 'trend_sheet.dart';
 
 enum Period { week, month }
@@ -397,17 +398,17 @@ class _TrendsScreenState extends State<TrendsScreen> {
           const SizedBox(height: 24),
           Text('Each day', style: Theme.of(context).textTheme.titleMedium),
           const Text(
-            'The lines compare each day with the busiest one. Tap a day to open it.',
+            'Tap a day to see its timeline.',
             style: TextStyle(color: AppColors.muted, fontSize: AppText.label),
           ),
           const SizedBox(height: 12),
-          _DayTable(
+          _DayList(
             days: [
               for (var i = elapsed - 1; i >= 0; i--)
                 DateTime(start.year, start.month, start.day + i),
             ],
-            totalsFor: (day) => Totals.of(entriesOnDay(widget.store.entries, day)),
-            onTap: widget.onOpenDay,
+            entriesFor: (day) => entriesOnDay(widget.store.entries, day),
+            onOpenDay: widget.onOpenDay,
           ),
         ],
       ),
@@ -505,177 +506,191 @@ class _TrendRow extends StatelessWidget {
   }
 }
 
-/// The days of the period as a table: one column per thing tracked, with a
-/// soft bar behind each value scaled to the period's highest, so busy and
-/// quiet days stand out at a glance.
-class _DayTable extends StatelessWidget {
-  const _DayTable({required this.days, required this.totalsFor, required this.onTap});
+/// The days of the period, newest first: one row per day with its totals.
+/// Tapping a day opens its timeline in a sheet.
+class _DayList extends StatelessWidget {
+  const _DayList({required this.days, required this.entriesFor, required this.onOpenDay});
 
-  /// Newest first.
   final List<DateTime> days;
-  final Totals Function(DateTime day) totalsFor;
-  final ValueChanged<DateTime> onTap;
+  final List<Entry> Function(DateTime day) entriesFor;
 
-  static const _columns = [
-    (EntryType.breast, 'Breast'),
-    (EntryType.bottle, 'Bottle ml'),
-    (EntryType.pump, 'Pumped ml'),
-    (EntryType.diaper, 'Diapers'),
-  ];
-
-  static num _value(EntryType type, Totals t) => switch (type) {
-        EntryType.breast => t.breast.inMinutes,
-        EntryType.pump => t.pumpMl,
-        EntryType.diaper => t.diaperCount,
-        _ => t.totalMl,
-      };
-
-  static String _format(EntryType type, num v) {
-    if (type != EntryType.breast) return '$v';
-    final h = v ~/ 60, m = v % 60;
-    return h == 0 ? '${m}m' : (m == 0 ? '${h}h' : '${h}h ${m}m');
-  }
+  /// Shows the day on the Today tab.
+  final ValueChanged<DateTime> onOpenDay;
 
   @override
   Widget build(BuildContext context) {
-    final totals = [for (final d in days) totalsFor(d)];
-    final maxes = [
-      for (final c in _columns)
-        totals.fold<num>(0, (m, t) => _value(c.$1, t) > m ? _value(c.$1, t) : m),
-    ];
     final today = dateOnly(DateTime.now());
-
     return Column(
       children: [
-        // Header: the group's icon over a short name and unit.
-        Padding(
-          padding: const EdgeInsets.only(bottom: 6),
-          child: Row(
-            children: [
-              const SizedBox(width: _dayWidth),
-              for (final c in _columns)
-                Expanded(
-                  child: Column(
-                    children: [
-                      Icon(iconForType(c.$1), size: 18, color: AppColors.lineForType(c.$1)),
-                      const SizedBox(height: 2),
-                      FittedBox(
-                        fit: BoxFit.scaleDown,
-                        child: Text(
-                          c.$2,
-                          style: const TextStyle(
-                            fontSize: AppText.caption,
-                            fontWeight: FontWeight.w700,
-                            color: AppColors.muted,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-            ],
-          ),
-        ),
-        for (var i = 0; i < days.length; i++)
-          InkWell(
-            key: ValueKey('day-${days[i].year}-${days[i].month}-${days[i].day}'),
-            onTap: () => onTap(days[i]),
-            borderRadius: BorderRadius.circular(10),
-            child: Container(
-              decoration: const BoxDecoration(
-                border: Border(top: BorderSide(color: AppColors.divider)),
-              ),
-              padding: const EdgeInsets.symmetric(vertical: 10),
-              child: Row(
-                children: [
-                  SizedBox(
-                    width: _dayWidth,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          days[i] == today ? 'Today' : DateFormat('EEE').format(days[i]),
-                          style: const TextStyle(fontSize: AppText.caption, color: AppColors.muted),
-                        ),
-                        Text(
-                          DateFormat('d MMM').format(days[i]),
-                          style: const TextStyle(
-                            fontSize: AppText.label,
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  for (var c = 0; c < _columns.length; c++)
-                    Expanded(
-                      child: _BarCell(
-                        type: _columns[c].$1,
-                        value: _value(_columns[c].$1, totals[i]),
-                        max: maxes[c],
-                        text: _format(_columns[c].$1, _value(_columns[c].$1, totals[i])),
-                      ),
-                    ),
-                ],
-              ),
-            ),
+        for (final day in days)
+          _DayRow(
+            key: ValueKey('day-${day.year}-${day.month}-${day.day}'),
+            day: day,
+            isToday: day == today,
+            totals: Totals.of(entriesFor(day)),
+            onTap: () => _showDaySheet(context, day, entriesFor(day), onOpenDay),
           ),
       ],
     );
   }
-
-  static const _dayWidth = 58.0;
 }
 
-/// A value with a thin bar under it, as long as its share of [max].
-class _BarCell extends StatelessWidget {
-  const _BarCell({required this.type, required this.value, required this.max, required this.text});
+/// "1h 6m" rather than "1 h 6 m", to keep a day's totals on one line.
+String _compact(Duration d) => formatDuration(d).replaceAll(RegExp(r' (?=[hms])'), '');
+
+/// The day's totals as icon-and-value pairs, in the group colours.
+List<Widget> _totalItems(Totals t) => [
+      if (t.breastCount > 0) _TotalItem(EntryType.breast, _compact(t.breast)),
+      if (t.anyBottleCount > 0) _TotalItem(EntryType.bottle, '${t.totalMl} ml'),
+      if (t.pumpCount > 0) _TotalItem(EntryType.pump, '${t.pumpMl} ml'),
+      if (t.diaperCount > 0) _TotalItem(EntryType.diaper, '${t.diaperCount}'),
+    ];
+
+class _TotalItem extends StatelessWidget {
+  const _TotalItem(this.type, this.text);
 
   final EntryType type;
-  final num value;
-  final num max;
   final String text;
 
   @override
   Widget build(BuildContext context) {
-    final share = max <= 0 ? 0.0 : (value / max).clamp(0.0, 1.0).toDouble();
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 6),
-      child: Column(
-        children: [
-          FittedBox(
-            fit: BoxFit.scaleDown,
-            child: Text(
-              value == 0 ? '–' : text,
-              style: TextStyle(
-                fontSize: AppText.body,
-                fontWeight: FontWeight.w600,
-                color: value == 0 ? AppColors.muted : AppColors.ink,
-                fontFeatures: const [FontFeature.tabularFigures()],
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(iconForType(type), size: 16, color: AppColors.lineForType(type)),
+        const SizedBox(width: 4),
+        Text(
+          text,
+          style: const TextStyle(
+            fontSize: AppText.label,
+            fontWeight: FontWeight.w600,
+            fontFeatures: [FontFeature.tabularFigures()],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _DayRow extends StatelessWidget {
+  const _DayRow({
+    super.key,
+    required this.day,
+    required this.isToday,
+    required this.totals,
+    required this.onTap,
+  });
+
+  final DateTime day;
+  final bool isToday;
+  final Totals totals;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final items = _totalItems(totals);
+    return InkWell(
+      onTap: onTap,
+      child: Container(
+        decoration: const BoxDecoration(
+          border: Border(top: BorderSide(color: AppColors.divider)),
+        ),
+        padding: const EdgeInsets.symmetric(vertical: 12),
+        child: Row(
+          children: [
+            SizedBox(
+              width: 58,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    isToday ? 'Today' : DateFormat('EEE').format(day),
+                    style: const TextStyle(fontSize: AppText.caption, color: AppColors.muted),
+                  ),
+                  Text(
+                    DateFormat('d MMM').format(day),
+                    style: const TextStyle(fontSize: AppText.label, fontWeight: FontWeight.w700),
+                  ),
+                ],
               ),
             ),
-          ),
-          const SizedBox(height: 4),
-          Container(
-            height: 4,
-            decoration: BoxDecoration(
-              color: AppColors.field,
-              borderRadius: BorderRadius.circular(2),
+            Expanded(
+              child: items.isEmpty
+                  ? const Text(
+                      'Nothing logged',
+                      style: TextStyle(fontSize: AppText.label, color: AppColors.muted),
+                    )
+                  : FittedBox(
+                      fit: BoxFit.scaleDown,
+                      alignment: Alignment.centerLeft,
+                      child: Row(
+                        children: [
+                          for (var i = 0; i < items.length; i++) ...[
+                            if (i > 0) const SizedBox(width: 14),
+                            items[i],
+                          ],
+                        ],
+                      ),
+                    ),
             ),
-            alignment: Alignment.centerLeft,
-            child: FractionallySizedBox(
-              widthFactor: share,
-              heightFactor: 1,
-              child: DecoratedBox(
-                decoration: BoxDecoration(
-                  color: AppColors.lineForType(type),
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
-            ),
-          ),
-        ],
+            const Icon(Icons.chevron_right_rounded, color: AppColors.muted, size: 20),
+          ],
+        ),
       ),
     );
   }
+}
+
+/// One day's timeline in a bottom sheet, with a way to open it on Today.
+Future<void> _showDaySheet(
+  BuildContext context,
+  DateTime day,
+  List<Entry> entries,
+  ValueChanged<DateTime> onOpenDay,
+) {
+  return showModalBottomSheet<void>(
+    context: context,
+    isScrollControlled: true,
+    showDragHandle: true,
+    builder: (context) => DraggableScrollableSheet(
+      expand: false,
+      initialChildSize: 0.7,
+      minChildSize: 0.4,
+      maxChildSize: 0.95,
+      builder: (context, controller) => ListView(
+        controller: controller,
+        padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
+        children: [
+          Text(
+            DateFormat('EEEE d MMMM').format(day),
+            style: Theme.of(context).textTheme.titleLarge,
+          ),
+          const SizedBox(height: 10),
+          Wrap(spacing: 14, runSpacing: 6, children: _totalItems(Totals.of(entries))),
+          const SizedBox(height: 16),
+          if (entries.isEmpty)
+            const Padding(
+              padding: EdgeInsets.symmetric(vertical: 24),
+              child: Text('Nothing logged on this day.', style: TextStyle(color: AppColors.muted)),
+            )
+          else
+            for (final e in entries.reversed) TimelineTile(entry: e),
+          const SizedBox(height: 16),
+          OutlinedButton(
+            onPressed: () {
+              Navigator.pop(context);
+              onOpenDay(day);
+            },
+            style: OutlinedButton.styleFrom(
+              minimumSize: const Size.fromHeight(48),
+              shape: const StadiumBorder(),
+              foregroundColor: AppColors.ink,
+              side: const BorderSide(color: AppColors.divider, width: 1.5),
+            ),
+            child: const Text('Open on Today to edit'),
+          ),
+        ],
+      ),
+    ),
+  );
 }

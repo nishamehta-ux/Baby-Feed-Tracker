@@ -73,10 +73,12 @@ void main() {
     expect(find.text('Average per day'), findsOneWidget);
     final now = DateTime.now();
     final dayRow = find.byKey(ValueKey('day-${now.year}-${now.month}-${now.day}'));
-    expect(find.descendant(of: dayRow, matching: find.text('60')), findsOneWidget);
+    expect(find.descendant(of: dayRow, matching: find.text('60 ml')), findsOneWidget);
     await tester.ensureVisible(dayRow);
     await tester.pumpAndSettle();
     await tester.tap(dayRow);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Open on Today to edit'));
     await tester.pumpAndSettle();
     expect(find.text('Timeline'), findsOneWidget);
   });
@@ -275,6 +277,36 @@ void main() {
     await tester.tap(find.text('Undo'));
     await tester.pump();
     expect(store.entries, isEmpty);
+  });
+
+  testWidgets('tapping a day in trends opens its timeline in a sheet', (tester) async {
+    final store = await _startApp(tester);
+    final now = DateTime.now();
+    final at = DateTime(now.year, now.month, now.day, 0, 5);
+    await store.upsert(Entry(
+      id: 'r1',
+      type: EntryType.routine,
+      start: at,
+      end: at,
+      title: 'Tummy time',
+    ));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Trends'));
+    await tester.pumpAndSettle();
+    final dayRow = find.byKey(ValueKey('day-${now.year}-${now.month}-${now.day}'));
+    await tester.ensureVisible(dayRow);
+    await tester.pumpAndSettle();
+    await tester.tap(dayRow);
+    await tester.pumpAndSettle();
+    expect(
+      find.descendant(of: find.byType(BottomSheet), matching: find.text('Tummy time')),
+      findsOneWidget,
+    );
+
+    await tester.tap(find.text('Open on Today to edit'));
+    await tester.pumpAndSettle();
+    expect(find.text('Timeline'), findsOneWidget);
   });
 
   testWidgets('trends switch to months', (tester) async {
