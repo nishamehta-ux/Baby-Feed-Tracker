@@ -1,17 +1,17 @@
-import 'package:baby_feed_tracker/models/feeding.dart';
+import 'package:baby_feed_tracker/models/entry.dart';
 import 'package:baby_feed_tracker/models/summary.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-Feeding _f(FeedingType type, DateTime start,
+Entry _f(EntryType type, DateTime start,
         {int ml = 0, Duration left = Duration.zero, Duration right = Duration.zero}) =>
-    Feeding(
+    Entry(
       id: start.toIso8601String(),
       type: type,
       start: start,
       end: start.add(const Duration(minutes: 20)),
       leftDuration: left,
       rightDuration: right,
-      endSide: type == FeedingType.breast ? BreastSide.left : null,
+      endSide: type == EntryType.breast ? BreastSide.left : null,
       amountMl: ml,
     );
 
@@ -23,29 +23,29 @@ void main() {
   });
 
   test('breast duration uses side timers, else start/end window', () {
-    final timed = _f(FeedingType.breast, DateTime(2026, 10, 6, 8),
+    final timed = _f(EntryType.breast, DateTime(2026, 10, 6, 8),
         left: const Duration(minutes: 10), right: const Duration(minutes: 5));
     expect(timed.breastDuration, const Duration(minutes: 15));
-    final untimed = _f(FeedingType.breast, DateTime(2026, 10, 6, 8));
+    final untimed = _f(EntryType.breast, DateTime(2026, 10, 6, 8));
     expect(untimed.breastDuration, const Duration(minutes: 20));
   });
 
   test('daily and weekly totals', () {
     final all = [
-      _f(FeedingType.breast, DateTime(2026, 10, 5, 3), left: const Duration(minutes: 12)),
-      _f(FeedingType.bottle, DateTime(2026, 10, 5, 9), ml: 90),
-      _f(FeedingType.breastMilk, DateTime(2026, 10, 6, 7), ml: 60),
-      _f(FeedingType.bottle, DateTime(2026, 10, 6, 11), ml: 120),
-      _f(FeedingType.bottle, DateTime(2026, 10, 12, 1), ml: 999), // next week
+      _f(EntryType.breast, DateTime(2026, 10, 5, 3), left: const Duration(minutes: 12)),
+      _f(EntryType.bottle, DateTime(2026, 10, 5, 9), ml: 90),
+      _f(EntryType.breastMilk, DateTime(2026, 10, 6, 7), ml: 60),
+      _f(EntryType.bottle, DateTime(2026, 10, 6, 11), ml: 120),
+      _f(EntryType.bottle, DateTime(2026, 10, 12, 1), ml: 999), // next week
     ];
 
-    final day = FeedingTotals.of(feedingsOnDay(all, DateTime(2026, 10, 6)));
+    final day = Totals.of(entriesOnDay(all, DateTime(2026, 10, 6)));
     expect(day.count, 2);
     expect(day.bottleMl, 120);
     expect(day.breastMilkMl, 60);
     expect(day.breast, Duration.zero);
 
-    final week = FeedingTotals.of(feedingsInWeek(all, DateTime(2026, 10, 5)));
+    final week = Totals.of(entriesInWeek(all, DateTime(2026, 10, 5)));
     expect(week.count, 4);
     expect(week.bottleMl, 210);
     expect(week.breast, const Duration(minutes: 12));
@@ -53,9 +53,9 @@ void main() {
   });
 
   test('json round trip', () {
-    final f = _f(FeedingType.breast, DateTime(2026, 10, 6, 8),
+    final f = _f(EntryType.breast, DateTime(2026, 10, 6, 8),
         left: const Duration(seconds: 61));
-    final back = Feeding.fromJson(f.toJson());
+    final back = Entry.fromJson(f.toJson());
     expect(back.leftDuration, f.leftDuration);
     expect(back.endSide, BreastSide.left);
     expect(back.start, f.start);

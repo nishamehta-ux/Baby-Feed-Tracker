@@ -1,19 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
-import '../data/feeding_store.dart';
-import '../models/feeding.dart';
+import '../data/entry_store.dart';
+import '../models/entry.dart';
 import '../models/summary.dart';
 import '../theme.dart';
 import '../widgets/app_logo.dart';
 import '../widgets/common.dart';
-import 'feeding_sheet.dart';
+import '../widgets/presets.dart';
+import 'entry_sheet.dart';
 
 /// Landing page: add a feeding, and the overview of one day (today by default).
 class TodayScreen extends StatefulWidget {
   const TodayScreen({super.key, required this.store, required this.day});
 
-  final FeedingStore store;
+  final EntryStore store;
   final ValueNotifier<DateTime> day;
 
   @override
@@ -23,7 +24,7 @@ class TodayScreen extends StatefulWidget {
 class _TodayScreenState extends State<TodayScreen> {
   _Range _range = _Range.today;
 
-  FeedingStore get store => widget.store;
+  EntryStore get store => widget.store;
 
   DateTime get _today => dateOnly(DateTime.now());
 
@@ -33,8 +34,8 @@ class _TodayScreenState extends State<TodayScreen> {
     widget.day.value = next.isAfter(_today) ? _today : next;
   }
 
-  Future<void> _openEditor(Feeding existing) =>
-      showFeedingSheet(context, store, existing: existing, onDeleted: _offerUndo);
+  Future<void> _openEditor(Entry existing) =>
+      showEntrySheet(context, store, existing: existing, onDeleted: _offerUndo);
 
   Future<void> _editBabyName() async {
     final controller = TextEditingController(text: store.babyName);
@@ -63,18 +64,18 @@ class _TodayScreenState extends State<TodayScreen> {
     if (name != null) await store.setBabyName(name);
   }
 
-  Future<void> _delete(Feeding feeding) async {
+  Future<void> _delete(Entry feeding) async {
     await store.delete(feeding.id);
     _offerUndo(feeding);
   }
 
-  void _offerUndo(Feeding feeding) {
+  void _offerUndo(Entry feeding) {
     if (!mounted) return;
     ScaffoldMessenger.of(context)
       ..hideCurrentSnackBar()
       ..showSnackBar(
         SnackBar(
-          content: const Text('Feeding deleted'),
+          content: const Text('Entry deleted'),
           action: SnackBarAction(
             label: 'Undo',
             onPressed: () => store.upsert(feeding),
@@ -101,7 +102,7 @@ class _TodayScreenState extends State<TodayScreen> {
                     const SizedBox(height: 20),
                     _buildHeader(context),
                     const SizedBox(height: 24),
-                    _AddFeedingButton(onTap: () => showAddFeedingMenu(context, store)),
+                    _AddFeedingButton(onTap: () => showAddMenu(context, store)),
                     const SizedBox(height: 18),
                     _buildOverview(context),
                   ],
@@ -141,12 +142,12 @@ class _TodayScreenState extends State<TodayScreen> {
     final now = DateTime.now();
     final last24 = isToday && _range == _Range.last24Hours;
     final feedings = last24
-        ? (store.feedings
+        ? (store.entries
             .where((f) => f.start.isAfter(now.subtract(const Duration(hours: 24))))
             .toList()
           ..sort((a, b) => a.start.compareTo(b.start)))
-        : feedingsOnDay(store.feedings, day);
-    final totals = FeedingTotals.of(feedings);
+        : entriesOnDay(store.entries, day);
+    final totals = Totals.of(feedings);
     final title = isToday
         ? 'Today'
         : day == DateTime(_today.year, _today.month, _today.day - 1)
@@ -217,7 +218,7 @@ class _TodayScreenState extends State<TodayScreen> {
           const SizedBox(height: 4),
           if (totals.breastCount > 0)
             _SummaryRow(
-              type: FeedingType.breast,
+              type: EntryType.breast,
               title: 'Breastfeeding',
               count: totals.breastCount,
               lines: [
@@ -228,13 +229,52 @@ class _TodayScreenState extends State<TodayScreen> {
             ),
           if (totals.anyBottleCount > 0)
             _SummaryRow(
-              type: FeedingType.bottle,
+              type: EntryType.bottle,
               title: 'Bottle feeding',
               count: totals.anyBottleCount,
               lines: [
                 '${totals.totalMl} ml total',
                 if (totals.breastMilkMl > 0) '${totals.breastMilkMl} ml breast milk',
                 if (totals.bottleMl > 0) '${totals.bottleMl} ml formula',
+              ],
+            ),
+          if (totals.pumpCount > 0)
+            _SummaryRow(
+              type: EntryType.pump,
+              title: 'Pumping',
+              count: totals.pumpCount,
+              lines: ['${totals.pumpMl} ml total'],
+            ),
+          if (totals.diaperCount > 0)
+            _SummaryRow(
+              type: EntryType.diaper,
+              title: 'Diapers',
+              count: totals.diaperCount,
+              lines: [
+                [
+                  if (totals.wetCount > 0) '${totals.wetCount} wet',
+                  if (totals.dirtyCount > 0) '${totals.dirtyCount} dirty',
+                  if (totals.diaperCount - _wetOrDirty(totals) > 0)
+                    '${totals.diaperCount - _wetOrDirty(totals)} dry',
+                ].join(' · '),
+              ],
+            ),
+          if (totals.routines.isNotEmpty)
+            _SummaryRow(
+              type: EntryType.routine,
+              title: 'Routines',
+              count: totals.routines.length,
+              lines: [_countedNames(totals.routines.map((e) => e.title))],
+            ),
+          if (totals.others.isNotEmpty)
+            _SummaryRow(
+              type: EntryType.other,
+              title: 'Other',
+              count: totals.others.length,
+              lines: [
+                for (final e in totals.others.take(3))
+                  [entryTitle(e), e.valueWithUnit].where((s) => s.isNotEmpty).join(' '),
+                if (totals.others.length > 3) 'and ${totals.others.length - 3} more',
               ],
             ),
           if (feedings.isEmpty)
@@ -282,6 +322,18 @@ class _TodayScreenState extends State<TodayScreen> {
 
 enum _Range { today, last24Hours }
 
+/// Diapers that were wet, dirty or both; the rest were dry.
+int _wetOrDirty(Totals t) => t.wetCount + t.dirtyCount - t.bothCount;
+
+/// "Bath · Tummy time ×2", in the order first logged.
+String _countedNames(Iterable<String> names) {
+  final counts = <String, int>{};
+  for (final n in names) {
+    counts[n] = (counts[n] ?? 0) + 1;
+  }
+  return counts.entries.map((e) => e.value > 1 ? '${e.key} ×${e.value}' : e.key).join(' · ');
+}
+
 class _AddFeedingButton extends StatelessWidget {
   const _AddFeedingButton({required this.onTap});
 
@@ -301,7 +353,7 @@ class _AddFeedingButton extends StatelessWidget {
             children: [
               Expanded(
                 child: Text(
-                  'Add a feeding',
+                  'Add an entry',
                   style: TextStyle(
                     color: Colors.white,
                     fontSize: 19,
@@ -322,14 +374,14 @@ class _AddFeedingButton extends StatelessWidget {
 class _LastFeedingCard extends StatelessWidget {
   const _LastFeedingCard({required this.feeding, required this.now, required this.onTap});
 
-  final Feeding feeding;
+  final Entry feeding;
   final DateTime now;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
     final f = feeding;
-    final isBreast = f.type == FeedingType.breast;
+    final isBreast = f.type == EntryType.breast;
     final value = isBreast ? '${f.breastDuration.inMinutes}' : '${f.amountMl}';
     final unit = isBreast ? 'min' : 'ml';
     return Material(
@@ -342,7 +394,7 @@ class _LastFeedingCard extends StatelessWidget {
           padding: const EdgeInsets.fromLTRB(14, 12, 16, 12),
           child: Row(
             children: [
-              FeedingTypeIcon(type: f.type, size: 44),
+              EntryIcon(type: f.type, size: 44),
               const SizedBox(width: 12),
               Expanded(
                 child: Column(
@@ -350,7 +402,8 @@ class _LastFeedingCard extends StatelessWidget {
                   children: [
                     const Text(
                       'Last feeding',
-                      style: TextStyle(fontSize: 17, fontWeight: FontWeight.w800, color: AppColors.ink),
+                      style: TextStyle(
+                          fontSize: 17, fontWeight: FontWeight.w800, color: AppColors.ink),
                     ),
                     Text(
                       '${timeAgo(f.start, now)} · ${f.type.shortLabel}',
@@ -361,12 +414,15 @@ class _LastFeedingCard extends StatelessWidget {
               ),
               Text(
                 value,
-                style: const TextStyle(fontSize: 40, fontWeight: FontWeight.w300, color: AppColors.ink, height: 1),
+                style: const TextStyle(
+                    fontSize: 40, fontWeight: FontWeight.w300, color: AppColors.ink, height: 1),
               ),
               const SizedBox(width: 3),
               Padding(
                 padding: const EdgeInsets.only(bottom: 18),
-                child: Text(unit, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: AppColors.ink)),
+                child: Text(unit,
+                    style: const TextStyle(
+                        fontSize: 14, fontWeight: FontWeight.w700, color: AppColors.ink)),
               ),
             ],
           ),
@@ -385,7 +441,7 @@ class _SummaryRow extends StatelessWidget {
     required this.lines,
   });
 
-  final FeedingType type;
+  final EntryType type;
   final String title;
   final int count;
   final List<String> lines;
@@ -400,7 +456,7 @@ class _SummaryRow extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          FeedingTypeIcon(type: type, size: 44),
+          EntryIcon(type: type, size: 44),
           const SizedBox(width: 14),
           Expanded(
             child: Column(
@@ -412,7 +468,8 @@ class _SummaryRow extends StatelessWidget {
                   children: [
                     Text(
                       title,
-                      style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: AppColors.ink),
+                      style: const TextStyle(
+                          fontSize: 18, fontWeight: FontWeight.w800, color: AppColors.ink),
                     ),
                     Semantics(
                       label: '$count times',
@@ -424,7 +481,8 @@ class _SummaryRow extends StatelessWidget {
                         ),
                         child: Text(
                           '$count',
-                          style: TextStyle(fontWeight: FontWeight.w800, color: AppColors.onType(type)),
+                          style:
+                              TextStyle(fontWeight: FontWeight.w800, color: AppColors.onType(type)),
                         ),
                       ),
                     ),
@@ -445,7 +503,7 @@ class _SummaryRow extends StatelessWidget {
 class _FeedingTile extends StatelessWidget {
   const _FeedingTile({required this.feeding, required this.onTap, this.showDay = false});
 
-  final Feeding feeding;
+  final Entry feeding;
   final VoidCallback onTap;
 
   /// Prefix the time with the day, for entries from before today.
@@ -455,15 +513,9 @@ class _FeedingTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final f = feeding;
     final hm = DateFormat.Hm();
-    final String detail;
-    if (f.type == FeedingType.breast) {
-      final parts = <String>[formatDuration(f.breastDuration)];
-      if (f.leftDuration > Duration.zero) parts.add('L ${formatDuration(f.leftDuration)}');
-      if (f.rightDuration > Duration.zero) parts.add('R ${formatDuration(f.rightDuration)}');
-      detail = parts.join(' · ');
-    } else {
-      detail = '${f.amountMl} ml';
-    }
+    final detail = entryDetail(f);
+    final hasRange =
+        f.type == EntryType.breast || (f.type == EntryType.pump && f.duration > Duration.zero);
     return InkWell(
       onTap: onTap,
       child: Padding(
@@ -471,14 +523,15 @@ class _FeedingTile extends StatelessWidget {
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            FeedingTypeIcon(type: f.type),
+            EntryIcon(type: f.type, icon: iconForEntry(f)),
             const SizedBox(width: 12),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(f.type.label, style: const TextStyle(fontWeight: FontWeight.w700)),
-                  Text(detail, style: const TextStyle(color: AppColors.muted)),
+                  Text(entryTitle(f), style: const TextStyle(fontWeight: FontWeight.w700)),
+                  if (detail.isNotEmpty)
+                    Text(detail, style: const TextStyle(color: AppColors.muted)),
                   if (f.notes.isNotEmpty)
                     Padding(
                       padding: const EdgeInsets.only(top: 2),
@@ -492,7 +545,7 @@ class _FeedingTile extends StatelessWidget {
             ),
             Text(
               '${showDay ? 'Yesterday ' : ''}${hm.format(f.start)}'
-              '${f.type == FeedingType.breast ? '–${hm.format(f.end)}' : ''}',
+              '${hasRange ? '–${hm.format(f.end)}' : ''}',
               style: const TextStyle(fontWeight: FontWeight.w600),
             ),
           ],

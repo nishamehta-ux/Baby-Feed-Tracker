@@ -3,26 +3,27 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-import '../models/feeding.dart';
+import '../models/entry.dart';
 
-/// Holds all feedings in memory and persists them locally.
-class FeedingStore extends ChangeNotifier {
+/// Holds every logged entry in memory and persists it locally.
+class EntryStore extends ChangeNotifier {
+  // The key predates non-feeding entries; kept so existing data still loads.
   static const _feedingsKey = 'feedings_v1';
   static const _babyNameKey = 'baby_name';
 
   SharedPreferences? _prefs;
-  final List<Feeding> _feedings = [];
+  final List<Entry> _entries = [];
   String _babyName = 'My baby';
 
-  List<Feeding> get feedings => List.unmodifiable(_feedings);
+  List<Entry> get entries => List.unmodifiable(_entries);
   String get babyName => _babyName;
 
-  Feeding? get lastFeeding => lastWhere((_) => true);
+  Entry? get lastFeeding => lastWhere((e) => e.type.isFeeding);
 
-  /// The most recent feeding (by start time) that matches [test].
-  Feeding? lastWhere(bool Function(Feeding f) test) {
-    Feeding? last;
-    for (final f in _feedings) {
+  /// The most recent entry (by start time) that matches [test].
+  Entry? lastWhere(bool Function(Entry f) test) {
+    Entry? last;
+    for (final f in _entries) {
       if (test(f) && (last == null || f.start.isAfter(last.start))) last = f;
     }
     return last;
@@ -31,11 +32,11 @@ class FeedingStore extends ChangeNotifier {
   Future<void> load() async {
     _prefs = await SharedPreferences.getInstance();
     final raw = _prefs!.getString(_feedingsKey);
-    _feedings.clear();
+    _entries.clear();
     if (raw != null) {
       final list = jsonDecode(raw) as List<dynamic>;
-      _feedings.addAll(
-        list.map((e) => Feeding.fromJson(e as Map<String, dynamic>)),
+      _entries.addAll(
+        list.map((e) => Entry.fromJson(e as Map<String, dynamic>)),
       );
     }
     _babyName = _prefs!.getString(_babyNameKey) ?? _babyName;
@@ -44,19 +45,19 @@ class FeedingStore extends ChangeNotifier {
 
   String newId() => DateTime.now().microsecondsSinceEpoch.toString();
 
-  Future<void> upsert(Feeding feeding) async {
-    final i = _feedings.indexWhere((f) => f.id == feeding.id);
+  Future<void> upsert(Entry feeding) async {
+    final i = _entries.indexWhere((f) => f.id == feeding.id);
     if (i >= 0) {
-      _feedings[i] = feeding;
+      _entries[i] = feeding;
     } else {
-      _feedings.add(feeding);
+      _entries.add(feeding);
     }
     notifyListeners();
     await _save();
   }
 
   Future<void> delete(String id) async {
-    _feedings.removeWhere((f) => f.id == id);
+    _entries.removeWhere((f) => f.id == id);
     notifyListeners();
     await _save();
   }
@@ -70,7 +71,7 @@ class FeedingStore extends ChangeNotifier {
   Future<void> _save() async {
     await _prefs?.setString(
       _feedingsKey,
-      jsonEncode(_feedings.map((f) => f.toJson()).toList()),
+      jsonEncode(_entries.map((f) => f.toJson()).toList()),
     );
   }
 }

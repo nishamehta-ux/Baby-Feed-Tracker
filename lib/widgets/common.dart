@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 
-import '../models/feeding.dart';
+import '../models/entry.dart';
 import '../theme.dart';
 
-/// White rounded card that sits on top of the purple header.
+/// White rounded card that sits on top of the indigo header.
 class AppCard extends StatelessWidget {
   const AppCard({super.key, required this.child});
 
@@ -53,27 +53,37 @@ class _CurveClipper extends CustomClipper<Path> {
   bool shouldReclip(covariant CustomClipper<Path> oldClipper) => false;
 }
 
-class FeedingTypeIcon extends StatelessWidget {
-  const FeedingTypeIcon({super.key, required this.type, this.size = 40});
+/// Icon for each kind of entry.
+IconData iconForType(EntryType type) => switch (type) {
+      EntryType.breast => Icons.favorite_rounded,
+      EntryType.bottle => Icons.local_drink_rounded,
+      EntryType.breastMilk => Icons.water_drop_rounded,
+      EntryType.pump => Icons.water_drop_outlined,
+      EntryType.diaper => Icons.baby_changing_station_rounded,
+      EntryType.routine => Icons.wb_sunny_outlined,
+      EntryType.other => Icons.edit_note_rounded,
+    };
 
-  final FeedingType type;
+/// A rounded tile in the entry's colour with its icon. [icon] overrides the
+/// type's own icon, e.g. a bath tub for a Bath routine.
+class EntryIcon extends StatelessWidget {
+  const EntryIcon({super.key, required this.type, this.size = 40, this.icon});
+
+  final EntryType type;
   final double size;
+  final IconData? icon;
 
   @override
   Widget build(BuildContext context) {
-    final icon = switch (type) {
-      FeedingType.breast => Icons.favorite_rounded,
-      FeedingType.bottle => Icons.local_drink_rounded,
-      FeedingType.breastMilk => Icons.water_drop_rounded,
-    };
     return Container(
       width: size,
       height: size,
       decoration: BoxDecoration(
         color: AppColors.forType(type),
         borderRadius: BorderRadius.circular(12),
+        border: type == EntryType.other ? Border.all(color: AppColors.ink, width: 1.25) : null,
       ),
-      child: Icon(icon, color: AppColors.onType(type), size: size * 0.5),
+      child: Icon(icon ?? iconForType(type), color: AppColors.onType(type), size: size * 0.5),
     );
   }
 }
@@ -97,10 +107,10 @@ class RoundIconButton extends StatelessWidget {
       onPressed: onPressed,
       icon: Icon(icon),
       style: IconButton.styleFrom(
-        backgroundColor: const Color(0xFFEDEDF2),
-        disabledBackgroundColor: const Color(0xFFF4F4F7),
+        backgroundColor: AppColors.field,
+        disabledBackgroundColor: AppColors.field.withValues(alpha: 0.5),
         foregroundColor: AppColors.ink,
-        disabledForegroundColor: const Color(0xFFB0AFC3),
+        disabledForegroundColor: AppColors.muted.withValues(alpha: 0.5),
       ),
     );
   }

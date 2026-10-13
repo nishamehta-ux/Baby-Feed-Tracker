@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../data/feeding_store.dart';
+import '../data/entry_store.dart';
 import '../models/summary.dart';
 import '../theme.dart';
 import 'today_screen.dart';
@@ -10,7 +10,7 @@ import 'week_screen.dart';
 class MainShell extends StatefulWidget {
   const MainShell({super.key, required this.store});
 
-  final FeedingStore store;
+  final EntryStore store;
 
   @override
   State<MainShell> createState() => _MainShellState();

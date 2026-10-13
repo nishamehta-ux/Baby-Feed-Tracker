@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 
-import 'data/feeding_store.dart';
+import 'data/entry_store.dart';
 import 'screens/main_shell.dart';
 import 'theme.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  final store = FeedingStore();
+  final store = EntryStore();
   await store.load();
   runApp(BabyFeedTrackerApp(store: store));
 }
@@ -14,7 +14,7 @@ Future<void> main() async {
 class BabyFeedTrackerApp extends StatelessWidget {
   const BabyFeedTrackerApp({super.key, required this.store});
 
-  final FeedingStore store;
+  final EntryStore store;
 
   @override
   Widget build(BuildContext context) {

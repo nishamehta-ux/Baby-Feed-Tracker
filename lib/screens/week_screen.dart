@@ -3,19 +3,19 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
-import '../data/feeding_store.dart';
-import '../models/feeding.dart';
+import '../data/entry_store.dart';
+import '../models/entry.dart';
 import '../models/summary.dart';
 import '../theme.dart';
 import '../widgets/app_logo.dart';
 import '../widgets/common.dart';
 
-/// Weekly summary: the average per day for each feeding type, how it compares
+/// Weekly summary: the average per day for feeds, pumping and diapers, how it compares
 /// with last week, a small 8-week trend line, and a list of the days.
 class WeekScreen extends StatefulWidget {
   const WeekScreen({super.key, required this.store, required this.onOpenDay});
 
-  final FeedingStore store;
+  final EntryStore store;
   final ValueChanged<DateTime> onOpenDay;
 
   @override
@@ -37,12 +37,12 @@ class _WeekScreenState extends State<WeekScreen> {
   /// current week only finished days count, so today's partial total doesn't
   /// drag the average down (on a Monday, today is all there is).
   _WeekAverage _averageFor(DateTime ws) {
-    final feedings = feedingsInWeek(widget.store.feedings, ws);
-    if (ws != startOfWeek(_today)) return _WeekAverage(FeedingTotals.of(feedings), 7);
+    final feedings = entriesInWeek(widget.store.entries, ws);
+    if (ws != startOfWeek(_today)) return _WeekAverage(Totals.of(feedings), 7);
     final elapsed = _today.difference(ws).inDays + 1;
-    if (elapsed == 1) return _WeekAverage(FeedingTotals.of(feedings), 1);
+    if (elapsed == 1) return _WeekAverage(Totals.of(feedings), 1);
     return _WeekAverage(
-      FeedingTotals.of(feedings.where((f) => !isSameDay(f.start, _today))),
+      Totals.of(feedings.where((f) => !isSameDay(f.start, _today))),
       elapsed - 1,
     );
   }
@@ -97,7 +97,7 @@ class _WeekScreenState extends State<WeekScreen> {
     final thisWeek = history.last;
     final lastWeek = history[history.length - 2];
 
-    Widget row(FeedingType type, String name, double Function(FeedingTotals) measure,
+    Widget row(EntryType type, String name, double Function(Totals) measure,
             String Function(double) format) =>
         _AverageRow(
           type: type,
@@ -153,12 +153,14 @@ class _WeekScreenState extends State<WeekScreen> {
               style: TextStyle(color: AppColors.muted, fontSize: 13),
             ),
           const SizedBox(height: 8),
-          row(FeedingType.breast, 'Breastfeeding', (t) => t.breast.inSeconds / 60,
+          row(EntryType.breast, 'Breastfeeding', (t) => t.breast.inSeconds / 60,
               (v) => formatDuration(Duration(minutes: v.round()))),
-          row(FeedingType.bottle, 'Formula', (t) => t.bottleMl.toDouble(),
+          row(EntryType.bottle, 'Formula', (t) => t.bottleMl.toDouble(), (v) => '${v.round()} ml'),
+          row(EntryType.breastMilk, 'Breast milk by bottle', (t) => t.breastMilkMl.toDouble(),
               (v) => '${v.round()} ml'),
-          row(FeedingType.breastMilk, 'Breast milk by bottle', (t) => t.breastMilkMl.toDouble(),
-              (v) => '${v.round()} ml'),
+          row(EntryType.pump, 'Pumped', (t) => t.pumpMl.toDouble(), (v) => '${v.round()} ml'),
+          row(EntryType.diaper, 'Diapers', (t) => t.diaperCount.toDouble(),
+              (v) => v == v.roundToDouble() ? '${v.round()}' : v.toStringAsFixed(1)),
           const SizedBox(height: 4),
           const Text(
             'The small lines show the last 8 weeks.',
@@ -170,8 +172,8 @@ class _WeekScreenState extends State<WeekScreen> {
           for (var i = elapsed - 1; i >= 0; i--)
             _DayRow(
               day: DateTime(ws.year, ws.month, ws.day + i),
-              totals: FeedingTotals.of(
-                feedingsOnDay(widget.store.feedings, DateTime(ws.year, ws.month, ws.day + i)),
+              totals: Totals.of(
+                entriesOnDay(widget.store.entries, DateTime(ws.year, ws.month, ws.day + i)),
               ),
               onTap: () => widget.onOpenDay(DateTime(ws.year, ws.month, ws.day + i)),
             ),
@@ -192,12 +194,12 @@ class _WeekScreenState extends State<WeekScreen> {
 class _WeekAverage {
   const _WeekAverage(this.totals, this.days);
 
-  final FeedingTotals totals;
+  final Totals totals;
   final int days;
 
-  bool get isEmpty => totals.count == 0;
+  bool get isEmpty => totals.count + totals.pumpCount + totals.diaperCount == 0;
 
-  double of(double Function(FeedingTotals t) measure) => measure(totals) / days;
+  double of(double Function(Totals t) measure) => measure(totals) / days;
 }
 
 class _AverageRow extends StatelessWidget {
@@ -209,7 +211,7 @@ class _AverageRow extends StatelessWidget {
     required this.trend,
   });
 
-  final FeedingType type;
+  final EntryType type;
   final String name;
   final String value;
   final String? change;
@@ -223,7 +225,7 @@ class _AverageRow extends StatelessWidget {
       padding: const EdgeInsets.symmetric(vertical: 10),
       child: Row(
         children: [
-          FeedingTypeIcon(type: type, size: 40),
+          EntryIcon(type: type, size: 40),
           const SizedBox(width: 12),
           Expanded(
             child: Column(
@@ -318,7 +320,7 @@ class _DayRow extends StatelessWidget {
   const _DayRow({required this.day, required this.totals, required this.onTap});
 
   final DateTime day;
-  final FeedingTotals totals;
+  final Totals totals;
   final VoidCallback onTap;
 
   @override
@@ -327,6 +329,9 @@ class _DayRow extends StatelessWidget {
       if (totals.breast > Duration.zero) formatDuration(totals.breast),
       if (totals.bottleMl > 0) '${totals.bottleMl} ml formula',
       if (totals.breastMilkMl > 0) '${totals.breastMilkMl} ml breast milk',
+      if (totals.pumpMl > 0) '${totals.pumpMl} ml pumped',
+      if (totals.diaperCount > 0)
+        '${totals.diaperCount} diaper${totals.diaperCount == 1 ? '' : 's'}',
     ];
     return InkWell(
       onTap: onTap,
@@ -343,7 +348,7 @@ class _DayRow extends StatelessWidget {
             ),
             Expanded(
               child: Text(
-                totals.count == 0 ? 'Nothing logged' : details.join(' · '),
+                details.isEmpty ? 'Nothing logged' : details.join(' · '),
                 style: const TextStyle(color: AppColors.muted),
               ),
             ),
