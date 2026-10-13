@@ -20,8 +20,8 @@ Future<void> showTrendSheet(
   required String Function(TrendPoint) rowLabel,
   bool zeroBased = true,
 }) {
-  final header = AppColors.outlined(type) ? AppColors.field : AppColors.forType(type);
-  final onHeader = AppColors.onType(type);
+  final header = AppColors.headerForType(type);
+  final onHeader = AppColors.onHeaderForType(type);
   return showModalBottomSheet<void>(
     context: context,
     isScrollControlled: true,
@@ -32,7 +32,7 @@ Future<void> showTrendSheet(
       child: ClipRRect(
         borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
         child: Material(
-          color: Colors.white,
+          color: AppColors.surface,
           child: Column(
             children: [
               Container(
@@ -69,7 +69,7 @@ Future<void> showTrendSheet(
                         EntryIcon(type: type, icon: icon, size: EntryIcon.medium),
                         const SizedBox(width: 12),
                         Expanded(
-                          child: Text(subtitle, style: const TextStyle(color: AppColors.muted)),
+                          child: Text(subtitle, style: TextStyle(color: AppColors.muted)),
                         ),
                       ],
                     ),
@@ -81,12 +81,12 @@ Future<void> showTrendSheet(
                       zeroBased: zeroBased,
                     ),
                     const SizedBox(height: 4),
-                    const Text(
+                    Text(
                       'Tap the chart to read a point.',
                       style: TextStyle(color: AppColors.muted, fontSize: AppText.label),
                     ),
                     const SizedBox(height: 24),
-                    const Text(
+                    Text(
                       'All values',
                       style: TextStyle(
                           fontSize: AppText.subtitle,
@@ -97,19 +97,17 @@ Future<void> showTrendSheet(
                     for (final p in points.reversed)
                       Container(
                         padding: const EdgeInsets.symmetric(vertical: 12),
-                        decoration: const BoxDecoration(
+                        decoration: BoxDecoration(
                           border: Border(bottom: BorderSide(color: AppColors.divider)),
                         ),
                         child: Row(
                           children: [
                             Expanded(
-                              child:
-                                  Text(rowLabel(p), style: const TextStyle(color: AppColors.ink)),
+                              child: Text(rowLabel(p), style: TextStyle(color: AppColors.ink)),
                             ),
                             Text(
                               format(p.value),
-                              style: const TextStyle(
-                                  fontWeight: FontWeight.w800, color: AppColors.ink),
+                              style: TextStyle(fontWeight: FontWeight.w800, color: AppColors.ink),
                             ),
                           ],
                         ),

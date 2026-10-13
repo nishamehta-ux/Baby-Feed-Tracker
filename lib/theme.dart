@@ -7,11 +7,20 @@ import 'models/entry.dart';
 /// the three are not enough.
 ///
 /// Colour is kept to a few jobs so screens are quick to read:
-/// - a calm neutral base: [background] with white cards and charcoal [ink];
+/// - a calm neutral base: [background] with [surface] cards and [ink] text;
 /// - one action colour, [primary], for the main button on a screen;
 /// - one selection colour, [selected], for anything chosen or running;
 /// - one soft colour per group of entries: feeds, pumping, diapers, routines.
+///
+/// Every role has a light and a dark value; [dark] picks between them. The
+/// app sets it before building the theme and rebuilds everything when it
+/// changes, so widgets simply read the roles.
 class AppColors {
+  /// Whether the dark palette is in use.
+  static bool dark = false;
+
+  static Color _pick(Color light, Color darkValue) => dark ? darkValue : light;
+
   static const taupe = Color(0xFFEDDCD2);
   static const mint = Color(0xFFDBE7E4);
   static const mist = Color(0xFFD6E2E9);
@@ -25,52 +34,70 @@ class AppColors {
   static const slate = Color(0xFF263241);
   static const steel = Color(0xFF4F6A7E);
 
-  static const primary = steel;
-  static const ink = slate;
-  static const muted = Color(0xFF6B7480);
-  static const background = linen;
+  static Color get primary => _pick(steel, const Color(0xFFA9C3D6));
+  static Color get onPrimary => _pick(Colors.white, const Color(0xFF14191F));
+  static Color get ink => _pick(slate, const Color(0xFFE8ECEF));
+  static Color get muted => _pick(const Color(0xFF6B7480), const Color(0xFF9AA4AE));
+  static Color get background => _pick(linen, const Color(0xFF15191E));
+
+  /// Cards and sheets.
+  static Color get surface => _pick(Colors.white, const Color(0xFF1F252C));
 
   /// The top of each tab: the page itself, so nothing heavy sits behind the
   /// title.
-  static const header = background;
+  static Color get header => background;
 
-  /// Inset fills inside white cards (chips, idle tiles, steppers).
-  static const field = Color(0xFFF5F4F1);
-  static const softBorder = mist;
-  static const tag = mint;
-  static const divider = Color(0xFFE6E4DE);
-  static const danger = Color(0xFFA33A2E);
+  /// Inset fills inside cards (chips, idle tiles, steppers).
+  static Color get field => _pick(const Color(0xFFF5F4F1), const Color(0xFF2A3139));
+  static Color get softBorder => _pick(mist, const Color(0xFF3A4D5C));
+  static Color get tag => _pick(mint, const Color(0xFF33443E));
+  static Color get divider => _pick(const Color(0xFFE6E4DE), const Color(0xFF2F363E));
+  static Color get danger => _pick(const Color(0xFFA33A2E), const Color(0xFFE58B7F));
 
   /// Selected and running states (segments, pills, a timed side). Kept apart
   /// from [primary], which is only for the main action on a screen.
-  static const selected = mist;
-  static const onSelected = ink;
+  static Color get selected => _pick(mist, const Color(0xFF3A4D5C));
+  static Color get onSelected => ink;
 
-  /// Fill for each kind of entry: the icon tile and the drawer header. Feeds
-  /// share one colour (their icons tell them apart), so the timeline reads
-  /// as feeds, pumping, diapers and routines at a glance; Other is white with
-  /// an outline.
+  /// Fill for each kind of entry: the icon circle and the drawer header.
+  /// Feeds share one colour (their icons tell them apart), so the timeline
+  /// reads as feeds, pumping, diapers and routines at a glance; Other is the
+  /// card colour with an outline. The pastels stay the same in dark mode.
   static Color forType(EntryType type) => switch (type) {
         EntryType.breast || EntryType.bottle || EntryType.breastMilk => taupe,
         EntryType.pump => mist,
         EntryType.diaper => mint,
         EntryType.routine => lilac,
-        EntryType.other => Colors.white,
+        EntryType.other => surface,
       };
 
-  /// Kinds drawn as a white tile with an outline.
+  /// The band at the top of a drawer or chart sheet. In dark mode a soft tint
+  /// of the group colour, so a sheet opened at night doesn't glare.
+  static Color headerForType(EntryType type) {
+    if (outlined(type)) return field;
+    return dark ? Color.lerp(surface, forType(type), 0.22)! : forType(type);
+  }
+
+  /// Text and icons on [headerForType].
+  static Color onHeaderForType(EntryType type) => dark ? ink : onType(type);
+
+  /// Kinds drawn as a plain tile with an outline.
   static bool outlined(EntryType type) => type == EntryType.other;
 
-  /// Text and icons placed on a [forType] fill.
-  static Color onType(EntryType type) => ink;
+  /// Text and icons placed on a [forType] fill: dark on the pastels in both
+  /// modes.
+  static Color onType(EntryType type) => outlined(type) ? ink : slate;
 
-  /// Deeper steps of the same hues for thin lines, which the pale fills are
-  /// too light for on white.
+  /// Deeper (light mode) or brighter (dark mode) steps of the same hues for
+  /// thin lines and small icons, which the pastel fills are too soft for.
   static Color lineForType(EntryType type) => switch (type) {
-        EntryType.breast || EntryType.bottle || EntryType.breastMilk => const Color(0xFFA27B66),
-        EntryType.pump => const Color(0xFF5B7C93),
-        EntryType.diaper => const Color(0xFF5E8A7C),
-        EntryType.routine => const Color(0xFF7A6E94),
+        EntryType.breast ||
+        EntryType.bottle ||
+        EntryType.breastMilk =>
+          _pick(const Color(0xFFA27B66), const Color(0xFFD9B8A6)),
+        EntryType.pump => _pick(const Color(0xFF5B7C93), const Color(0xFFA9C3D6)),
+        EntryType.diaper => _pick(const Color(0xFF5E8A7C), const Color(0xFFA8CFC2)),
+        EntryType.routine => _pick(const Color(0xFF7A6E94), const Color(0xFFB8ADD2)),
         EntryType.other => muted,
       };
 }
@@ -84,9 +111,13 @@ class AppRadius {
 
 /// Soft shadow for the one card on a screen that should stand out (the live
 /// timer); everything else sits flat.
-const raisedShadow = [
-  BoxShadow(color: Color(0x1F263241), blurRadius: 24, offset: Offset(0, 8)),
-];
+List<BoxShadow> get raisedShadow => [
+      BoxShadow(
+        color: AppColors.dark ? const Color(0x66000000) : const Color(0x1F263241),
+        blurRadius: 24,
+        offset: const Offset(0, 8),
+      ),
+    ];
 
 /// The type scale. Every text size in the app comes from here, so the
 /// levels stay distinct: headline > title > subtitle > body > label > caption.
@@ -117,44 +148,46 @@ class AppText {
 }
 
 ThemeData buildTheme() {
+  final brightness = AppColors.dark ? Brightness.dark : Brightness.light;
   // Every role the Material widgets read is set from the palette, so no
   // generated colour (such as the default lilac) shows anywhere.
-  final scheme = ColorScheme.fromSeed(seedColor: AppColors.primary).copyWith(
+  final scheme = ColorScheme.fromSeed(seedColor: AppColors.steel, brightness: brightness).copyWith(
     primary: AppColors.primary,
-    onPrimary: Colors.white,
-    primaryContainer: AppColors.mist,
+    onPrimary: AppColors.onPrimary,
+    primaryContainer: AppColors.selected,
     onPrimaryContainer: AppColors.ink,
-    secondary: AppColors.mist,
+    secondary: AppColors.selected,
     onSecondary: AppColors.ink,
-    secondaryContainer: AppColors.mist,
+    secondaryContainer: AppColors.selected,
     onSecondaryContainer: AppColors.ink,
     tertiary: AppColors.taupe,
     onTertiary: AppColors.ink,
     tertiaryContainer: AppColors.taupe,
     onTertiaryContainer: AppColors.ink,
-    surface: Colors.white,
+    surface: AppColors.surface,
     onSurface: AppColors.ink,
     onSurfaceVariant: AppColors.muted,
-    surfaceContainerLowest: Colors.white,
-    surfaceContainerLow: Colors.white,
+    surfaceContainerLowest: AppColors.surface,
+    surfaceContainerLow: AppColors.surface,
     surfaceContainer: AppColors.field,
-    surfaceContainerHigh: Colors.white,
+    surfaceContainerHigh: AppColors.surface,
     surfaceContainerHighest: AppColors.field,
     surfaceTint: Colors.transparent,
     outline: AppColors.muted,
     outlineVariant: AppColors.divider,
     inverseSurface: AppColors.ink,
-    onInverseSurface: Colors.white,
-    inversePrimary: AppColors.mist,
+    onInverseSurface: AppColors.background,
+    inversePrimary: AppColors.selected,
     error: AppColors.danger,
-    onError: Colors.white,
+    onError: AppColors.onPrimary,
   );
   return ThemeData(
+    brightness: brightness,
     colorScheme: scheme,
     fontFamily: 'Heros',
     scaffoldBackgroundColor: AppColors.background,
     useMaterial3: true,
-    textTheme: const TextTheme(
+    textTheme: TextTheme(
       headlineMedium: TextStyle(
         fontWeight: FontWeight.w800,
         color: AppColors.ink,
@@ -169,6 +202,7 @@ ThemeData buildTheme() {
     filledButtonTheme: FilledButtonThemeData(
       style: FilledButton.styleFrom(
         backgroundColor: AppColors.primary,
+        foregroundColor: AppColors.onPrimary,
         minimumSize: const Size.fromHeight(56),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
         textStyle: const TextStyle(fontFamily: 'Heros', fontSize: 17, fontWeight: FontWeight.w700),
@@ -179,23 +213,23 @@ ThemeData buildTheme() {
         selectedBackgroundColor: AppColors.selected,
         selectedForegroundColor: AppColors.onSelected,
         foregroundColor: AppColors.ink,
-        side: const BorderSide(color: AppColors.mint, width: 1.5),
+        side: BorderSide(color: AppColors.selected, width: 1.5),
         textStyle: const TextStyle(fontFamily: 'Heros', fontWeight: FontWeight.w700),
       ),
     ),
     switchTheme: SwitchThemeData(
       thumbColor: WidgetStateProperty.resolveWith(
-        (s) => s.contains(WidgetState.selected) ? Colors.white : AppColors.muted,
+        (s) => s.contains(WidgetState.selected) ? AppColors.surface : AppColors.muted,
       ),
       trackColor: WidgetStateProperty.resolveWith(
         (s) => s.contains(WidgetState.selected) ? AppColors.selected : AppColors.field,
       ),
     ),
-    snackBarTheme: const SnackBarThemeData(
+    snackBarTheme: SnackBarThemeData(
       backgroundColor: AppColors.ink,
       actionTextColor: AppColors.taupe,
     ),
-    dialogTheme: const DialogThemeData(backgroundColor: Colors.white),
-    bottomSheetTheme: const BottomSheetThemeData(backgroundColor: Colors.white),
+    dialogTheme: DialogThemeData(backgroundColor: AppColors.surface),
+    bottomSheetTheme: BottomSheetThemeData(backgroundColor: AppColors.surface),
   );
 }

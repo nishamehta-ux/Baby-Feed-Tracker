@@ -110,7 +110,7 @@ class _Tile extends StatelessWidget {
       button: true,
       label: '$title, $subtitle',
       child: Material(
-        color: Colors.white,
+        color: AppColors.surface,
         borderRadius: BorderRadius.circular(AppRadius.tile),
         child: InkWell(
           borderRadius: BorderRadius.circular(AppRadius.tile),
@@ -129,7 +129,7 @@ class _Tile extends StatelessWidget {
                     children: [
                       Text(
                         title,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontWeight: FontWeight.w700,
                           fontSize: AppText.body,
                           color: AppColors.ink,
@@ -137,7 +137,7 @@ class _Tile extends StatelessWidget {
                       ),
                       Text(
                         subtitle,
-                        style: const TextStyle(fontSize: AppText.label, color: AppColors.muted),
+                        style: TextStyle(fontSize: AppText.label, color: AppColors.muted),
                       ),
                     ],
                   ),
@@ -219,7 +219,7 @@ class _LiveTimerCardState extends State<LiveTimerCard> {
     return Container(
       padding: const EdgeInsets.fromLTRB(20, 14, 12, 20),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.surface,
         borderRadius: BorderRadius.circular(AppRadius.card),
         boxShadow: raisedShadow,
       ),
@@ -233,7 +233,7 @@ class _LiveTimerCardState extends State<LiveTimerCard> {
               Expanded(
                 child: Text(
                   isBreast ? 'Breastfeeding' : 'Pumping',
-                  style: const TextStyle(
+                  style: TextStyle(
                       fontSize: AppText.subtitle,
                       fontWeight: FontWeight.w700,
                       color: AppColors.ink),
@@ -242,7 +242,7 @@ class _LiveTimerCardState extends State<LiveTimerCard> {
               IconButton(
                 onPressed: _discard,
                 tooltip: live.notStarted ? 'Cancel' : 'Discard',
-                icon: const Icon(Icons.close_rounded, color: AppColors.muted),
+                icon: Icon(Icons.close_rounded, color: AppColors.muted),
               ),
             ],
           ),
@@ -283,7 +283,7 @@ class _LiveTimerCardState extends State<LiveTimerCard> {
                     Flexible(
                       child: Text(
                         status,
-                        style: const TextStyle(fontSize: AppText.body, color: AppColors.muted),
+                        style: TextStyle(fontSize: AppText.body, color: AppColors.muted),
                       ),
                     ),
                   ],
@@ -409,8 +409,7 @@ class _ControlTile extends StatelessWidget {
                             ),
                             child: Text(
                               tag!,
-                              style:
-                                  const TextStyle(fontSize: AppText.caption, color: AppColors.ink),
+                              style: TextStyle(fontSize: AppText.caption, color: AppColors.ink),
                             ),
                           ),
                         ],

@@ -6,20 +6,34 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../models/entry.dart';
 import '../models/live_timer.dart';
 
+/// Light or dark colours: following the phone's setting, or fixed.
+enum Appearance {
+  system('Match phone'),
+  light('Light'),
+  dark('Dark');
+
+  const Appearance(this.label);
+
+  final String label;
+}
+
 /// Holds every logged entry in memory and persists it locally.
 class EntryStore extends ChangeNotifier {
   // The key predates non-feeding entries; kept so existing data still loads.
   static const _feedingsKey = 'feedings_v1';
   static const _babyNameKey = 'baby_name';
   static const _liveKey = 'live_timer';
+  static const _appearanceKey = 'appearance';
 
   SharedPreferences? _prefs;
   final List<Entry> _entries = [];
   String _babyName = 'My baby';
   LiveTimer? _live;
+  Appearance _appearance = Appearance.system;
 
   List<Entry> get entries => List.unmodifiable(_entries);
   String get babyName => _babyName;
+  Appearance get appearance => _appearance;
 
   /// The breastfeeding or pumping timer started from Today, if any.
   LiveTimer? get live => _live;
@@ -46,6 +60,8 @@ class EntryStore extends ChangeNotifier {
       );
     }
     _babyName = _prefs!.getString(_babyNameKey) ?? _babyName;
+    _appearance =
+        Appearance.values.asNameMap()[_prefs!.getString(_appearanceKey)] ?? Appearance.system;
     final live = _prefs!.getString(_liveKey);
     _live = live == null ? null : LiveTimer.fromJson(jsonDecode(live) as Map<String, dynamic>);
     notifyListeners();
@@ -85,6 +101,12 @@ class EntryStore extends ChangeNotifier {
     _babyName = name.trim().isEmpty ? 'My baby' : name.trim();
     notifyListeners();
     await _prefs?.setString(_babyNameKey, _babyName);
+  }
+
+  Future<void> setAppearance(Appearance appearance) async {
+    _appearance = appearance;
+    notifyListeners();
+    await _prefs?.setString(_appearanceKey, appearance.name);
   }
 
   Future<void> _save() async {

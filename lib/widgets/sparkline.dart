@@ -2,6 +2,8 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 
+import '../theme.dart';
+
 /// Tiny trend line without axes; the last point is marked with a dot.
 ///
 /// [values] are evenly spaced, oldest first; null leaves a gap at the start
@@ -74,7 +76,7 @@ class _SparklinePainter extends CustomPainter {
         ..strokeJoin = StrokeJoin.round,
     );
     final end = at(points.length - 1);
-    canvas.drawCircle(end, 5.5, Paint()..color = Colors.white);
+    canvas.drawCircle(end, 5.5, Paint()..color = AppColors.surface);
     canvas.drawCircle(end, 4, Paint()..color = color);
   }
 

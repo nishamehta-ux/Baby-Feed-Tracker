@@ -38,7 +38,7 @@ class TimelineTile extends StatelessWidget {
                   children: [
                     Text(
                       hm.format(e.start),
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontWeight: FontWeight.w600,
                         color: AppColors.muted,
                         fontFeatures: [FontFeature.tabularFigures()],
@@ -47,7 +47,7 @@ class TimelineTile extends StatelessWidget {
                     if (hasRange)
                       Text(
                         hm.format(e.end),
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: AppText.label,
                           color: AppColors.muted,
                           fontFeatures: [FontFeature.tabularFigures()],
@@ -81,8 +81,7 @@ class TimelineTile extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(entryTitle(e), style: const TextStyle(fontWeight: FontWeight.w700)),
-                    if (detail.isNotEmpty)
-                      Text(detail, style: const TextStyle(color: AppColors.muted)),
+                    if (detail.isNotEmpty) Text(detail, style: TextStyle(color: AppColors.muted)),
                     if (e.notes.isNotEmpty)
                       Padding(
                         padding: const EdgeInsets.only(top: 2),

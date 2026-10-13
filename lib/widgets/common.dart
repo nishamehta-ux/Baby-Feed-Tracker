@@ -15,7 +15,7 @@ class AppCard extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.fromLTRB(24, 28, 24, 24),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.surface,
         borderRadius: BorderRadius.circular(AppRadius.card),
       ),
       child: child,
@@ -156,7 +156,7 @@ class SectionLabel extends StatelessWidget {
   Widget build(BuildContext context) {
     return Text(
       text.toUpperCase(),
-      style: const TextStyle(
+      style: TextStyle(
         fontSize: AppText.label,
         fontWeight: FontWeight.w700,
         letterSpacing: 0.8,

@@ -25,7 +25,7 @@ Future<void> showAddMenu(BuildContext context, EntryStore store) async {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
-          children: const [
+          children: [
             _GrabHandle(),
             Padding(
               padding: EdgeInsets.fromLTRB(16, 12, 16, 4),
@@ -557,16 +557,15 @@ class _EntrySheetState extends State<EntrySheet> {
   Widget build(BuildContext context) {
     // Bottle drawers keep the sand header whichever contents are chosen.
     final headerType = _type.isBottle ? EntryType.bottle : _type;
-    final headerColor =
-        AppColors.outlined(headerType) ? AppColors.field : AppColors.forType(headerType);
-    final onHeader = AppColors.onType(headerType);
+    final headerColor = AppColors.headerForType(headerType);
+    final onHeader = AppColors.onHeaderForType(headerType);
 
     return FractionallySizedBox(
       heightFactor: 0.94,
       child: ClipRRect(
         borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
         child: Material(
-          color: Colors.white,
+          color: AppColors.surface,
           child: Column(
             children: [
               Container(
@@ -607,12 +606,12 @@ class _EntrySheetState extends State<EntrySheet> {
                   padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
                   child: Row(
                     children: [
-                      const Icon(Icons.info_outline_rounded, color: AppColors.ink, size: 20),
+                      Icon(Icons.info_outline_rounded, color: AppColors.ink, size: 20),
                       const SizedBox(width: 8),
                       Expanded(
                         child: Text(
                           _error!,
-                          style: const TextStyle(fontWeight: FontWeight.w700, color: AppColors.ink),
+                          style: TextStyle(fontWeight: FontWeight.w700, color: AppColors.ink),
                         ),
                       ),
                     ],
@@ -754,7 +753,7 @@ class _EntrySheetState extends State<EntrySheet> {
               Expanded(
                 child: Text(
                   'Use last amount: $last ml?',
-                  style: const TextStyle(fontSize: AppText.body, color: AppColors.ink),
+                  style: TextStyle(fontSize: AppText.body, color: AppColors.ink),
                 ),
               ),
               OutlinedButton(
@@ -764,7 +763,7 @@ class _EntrySheetState extends State<EntrySheet> {
                 }),
                 style: OutlinedButton.styleFrom(
                   foregroundColor: AppColors.ink,
-                  side: const BorderSide(color: AppColors.ink),
+                  side: BorderSide(color: AppColors.ink),
                 ),
                 child: const Text('Yes'),
               ),
@@ -824,7 +823,7 @@ class _EntrySheetState extends State<EntrySheet> {
           child: Text(
             'Total ${_leftMl + _rightMl} ml',
             textAlign: TextAlign.right,
-            style: const TextStyle(
+            style: TextStyle(
                 fontSize: AppText.subtitle, fontWeight: FontWeight.w800, color: AppColors.ink),
           ),
         ),
@@ -1004,11 +1003,11 @@ class _MenuOption extends StatelessWidget {
       leading: EntryIcon(type: type, size: EntryIcon.large),
       title: Text(
         title,
-        style: const TextStyle(
+        style: TextStyle(
             fontSize: AppText.subtitle, fontWeight: FontWeight.w800, color: AppColors.ink),
       ),
-      subtitle: Text(subtitle, style: const TextStyle(color: AppColors.muted)),
-      trailing: const Icon(Icons.chevron_right_rounded, color: AppColors.muted, size: 20),
+      subtitle: Text(subtitle, style: TextStyle(color: AppColors.muted)),
+      trailing: Icon(Icons.chevron_right_rounded, color: AppColors.muted, size: 20),
       onTap: () => Navigator.pop(context, type),
     );
   }
@@ -1028,13 +1027,13 @@ class _FormRow extends StatelessWidget {
       child: Container(
         constraints: const BoxConstraints(minHeight: 64),
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-        decoration: const BoxDecoration(border: Border(top: BorderSide(color: AppColors.divider))),
+        decoration: BoxDecoration(border: Border(top: BorderSide(color: AppColors.divider))),
         child: Row(
           children: [
             Expanded(
               child: Text(
                 label,
-                style: const TextStyle(
+                style: TextStyle(
                     fontSize: AppText.subtitle, fontWeight: FontWeight.w700, color: AppColors.ink),
               ),
             ),
@@ -1089,14 +1088,14 @@ class _TextRow extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.fromLTRB(20, 4, 20, 4),
-      decoration: const BoxDecoration(border: Border(top: BorderSide(color: AppColors.divider))),
+      decoration: BoxDecoration(border: Border(top: BorderSide(color: AppColors.divider))),
       child: Row(
         children: [
           Expanded(
             flex: 5,
             child: Text(
               label,
-              style: const TextStyle(
+              style: TextStyle(
                   fontSize: AppText.subtitle, fontWeight: FontWeight.w700, color: AppColors.ink),
             ),
           ),
@@ -1110,11 +1109,11 @@ class _TextRow extends StatelessWidget {
               textAlign: TextAlign.right,
               keyboardType: numeric ? const TextInputType.numberWithOptions(decimal: true) : null,
               textCapitalization: TextCapitalization.sentences,
-              style: const TextStyle(
+              style: TextStyle(
                   fontSize: AppText.subtitle, fontWeight: FontWeight.w700, color: AppColors.ink),
               decoration: InputDecoration(
                 hintText: hint,
-                hintStyle: const TextStyle(color: AppColors.muted, fontWeight: FontWeight.w400),
+                hintStyle: TextStyle(color: AppColors.muted, fontWeight: FontWeight.w400),
                 border: InputBorder.none,
                 contentPadding: const EdgeInsets.symmetric(vertical: 20),
               ),
@@ -1122,7 +1121,7 @@ class _TextRow extends StatelessWidget {
           ),
           if (suffix != null && suffix!.isNotEmpty) ...[
             const SizedBox(width: 6),
-            Text(suffix!, style: const TextStyle(fontSize: AppText.subtitle, color: AppColors.ink)),
+            Text(suffix!, style: TextStyle(fontSize: AppText.subtitle, color: AppColors.ink)),
           ],
         ],
       ),
@@ -1140,7 +1139,7 @@ class _NotesRow extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.fromLTRB(20, 4, 20, 4),
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         border: Border(
           top: BorderSide(color: AppColors.divider),
           bottom: BorderSide(color: AppColors.divider),
@@ -1152,8 +1151,8 @@ class _NotesRow extends StatelessWidget {
         minLines: 1,
         maxLines: 4,
         textCapitalization: TextCapitalization.sentences,
-        style: const TextStyle(fontSize: AppText.subtitle, color: AppColors.ink),
-        decoration: const InputDecoration(
+        style: TextStyle(fontSize: AppText.subtitle, color: AppColors.ink),
+        decoration: InputDecoration(
           hintText: 'Notes',
           hintStyle: TextStyle(
               fontSize: AppText.subtitle, fontWeight: FontWeight.w700, color: AppColors.muted),
@@ -1204,7 +1203,7 @@ class _TimerBlock extends StatelessWidget {
                       BoxDecoration(color: AppColors.tag, borderRadius: BorderRadius.circular(6)),
                   child: Text(
                     tag!,
-                    style: const TextStyle(
+                    style: TextStyle(
                         fontSize: AppText.label, fontWeight: FontWeight.w700, color: AppColors.ink),
                   ),
                 ),
@@ -1217,7 +1216,7 @@ class _TimerBlock extends StatelessWidget {
             children: [
               Text(
                 formatClock(elapsed),
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: AppText.timer,
                   fontWeight: FontWeight.w300,
                   color: AppColors.ink,
@@ -1227,7 +1226,7 @@ class _TimerBlock extends StatelessWidget {
               IconButton(
                 onPressed: onEdit,
                 tooltip: name == 'timer' ? 'Enter the time' : 'Enter $name time',
-                icon: const Icon(Icons.edit_rounded, color: AppColors.ink, size: 20),
+                icon: Icon(Icons.edit_rounded, color: AppColors.ink, size: 20),
               ),
             ],
           ),
@@ -1253,7 +1252,7 @@ class _TimerBlock extends StatelessWidget {
                   padding: const EdgeInsets.symmetric(horizontal: 16),
                   shape: const StadiumBorder(),
                   foregroundColor: AppColors.ink,
-                  side: const BorderSide(color: AppColors.ink, width: 1.5),
+                  side: BorderSide(color: AppColors.ink, width: 1.5),
                   textStyle: const TextStyle(
                       fontFamily: 'Heros', fontSize: AppText.subtitle, fontWeight: FontWeight.w700),
                 ),
@@ -1273,7 +1272,7 @@ class _CircleChoices extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
-      decoration: const BoxDecoration(border: Border(top: BorderSide(color: AppColors.divider))),
+      decoration: BoxDecoration(border: Border(top: BorderSide(color: AppColors.divider))),
       child: Wrap(
         alignment: WrapAlignment.center,
         spacing: 20,
@@ -1311,7 +1310,7 @@ class _ChoiceCircle extends StatelessWidget {
           alignment: Alignment.center,
           decoration: BoxDecoration(
             shape: BoxShape.circle,
-            color: selected ? color : Colors.white,
+            color: selected ? color : AppColors.surface,
             border: Border.all(color: AppColors.ink, width: selected ? 2.5 : 1.25),
           ),
           child: Text(
@@ -1341,13 +1340,13 @@ class _ChoiceGrid extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.fromLTRB(20, 16, 20, 20),
-      decoration: const BoxDecoration(border: Border(top: BorderSide(color: AppColors.divider))),
+      decoration: BoxDecoration(border: Border(top: BorderSide(color: AppColors.divider))),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
             label,
-            style: const TextStyle(
+            style: TextStyle(
                 fontSize: AppText.subtitle, fontWeight: FontWeight.w700, color: AppColors.ink),
           ),
           const SizedBox(height: 12),
@@ -1370,7 +1369,7 @@ class _Pill extends StatelessWidget {
   Widget build(BuildContext context) {
     final fg = selected ? AppColors.onSelected : AppColors.ink;
     return Material(
-      color: selected ? AppColors.selected : Colors.white,
+      color: selected ? AppColors.selected : AppColors.surface,
       shape: StadiumBorder(
         side: BorderSide(color: selected ? AppColors.selected : AppColors.ink, width: 1.25),
       ),
@@ -1434,7 +1433,7 @@ class _MlStepper extends StatelessWidget {
             alignment: Alignment.center,
             child: Text(
               '$value ml',
-              style: const TextStyle(
+              style: TextStyle(
                   fontSize: AppText.subtitle, fontWeight: FontWeight.w800, color: AppColors.ink),
             ),
           ),

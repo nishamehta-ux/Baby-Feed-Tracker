@@ -138,11 +138,11 @@ class _TrendsScreenState extends State<TrendsScreen> {
                     SegmentedButton<Period>(
                       showSelectedIcon: false,
                       style: SegmentedButton.styleFrom(
-                        backgroundColor: Colors.white,
+                        backgroundColor: AppColors.surface,
                         foregroundColor: AppColors.ink,
                         selectedBackgroundColor: AppColors.selected,
                         selectedForegroundColor: AppColors.onSelected,
-                        side: const BorderSide(color: Colors.white),
+                        side: BorderSide(color: AppColors.surface),
                       ),
                       segments: const [
                         ButtonSegment(value: Period.week, label: Text('Week')),
@@ -329,13 +329,11 @@ class _TrendsScreenState extends State<TrendsScreen> {
                             child: Text(
                               _rangeLabel,
                               overflow: TextOverflow.ellipsis,
-                              style: const TextStyle(
-                                  fontWeight: FontWeight.w700, color: AppColors.muted),
+                              style: TextStyle(fontWeight: FontWeight.w700, color: AppColors.muted),
                             ),
                           ),
                           const SizedBox(width: 4),
-                          const Icon(Icons.calendar_month_rounded,
-                              size: 18, color: AppColors.muted),
+                          Icon(Icons.calendar_month_rounded, size: 18, color: AppColors.muted),
                         ],
                       ),
                     ],
@@ -358,7 +356,7 @@ class _TrendsScreenState extends State<TrendsScreen> {
           const SizedBox(height: 24),
           Text('Average per day', style: Theme.of(context).textTheme.titleMedium),
           if (isCurrent && elapsed > 1)
-            const Text(
+            Text(
               "Today is added once it's over.",
               style: TextStyle(color: AppColors.muted, fontSize: AppText.label),
             ),
@@ -373,14 +371,14 @@ class _TrendsScreenState extends State<TrendsScreen> {
           const SizedBox(height: 4),
           Text(
             'The small lines show the last $_span ${_unit}s. Tap a row for its chart.',
-            style: const TextStyle(color: AppColors.muted, fontSize: AppText.label),
+            style: TextStyle(color: AppColors.muted, fontSize: AppText.label),
           ),
           if (routines.isNotEmpty) ...[
             const SizedBox(height: 24),
             Text('Routines', style: Theme.of(context).textTheme.titleMedium),
             Text(
               isCurrent ? 'Times this $_unit so far, against last $_unit.' : 'Times that $_unit.',
-              style: const TextStyle(color: AppColors.muted, fontSize: AppText.label),
+              style: TextStyle(color: AppColors.muted, fontSize: AppText.label),
             ),
             const SizedBox(height: 8),
             for (final name in routines) routineRow(name),
@@ -388,7 +386,7 @@ class _TrendsScreenState extends State<TrendsScreen> {
           if (measurements.isNotEmpty) ...[
             const SizedBox(height: 24),
             Text('Measurements', style: Theme.of(context).textTheme.titleMedium),
-            const Text(
+            Text(
               'Numbers logged under Other, such as weight. The small lines show the latest readings.',
               style: TextStyle(color: AppColors.muted, fontSize: AppText.label),
             ),
@@ -397,7 +395,7 @@ class _TrendsScreenState extends State<TrendsScreen> {
           ],
           const SizedBox(height: 24),
           Text('Each day', style: Theme.of(context).textTheme.titleMedium),
-          const Text(
+          Text(
             'Tap a day to see its timeline.',
             style: TextStyle(color: AppColors.muted, fontSize: AppText.label),
           ),
@@ -480,8 +478,7 @@ class _TrendRow extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(name,
-                      style: const TextStyle(color: AppColors.muted, fontSize: AppText.label)),
+                  Text(name, style: TextStyle(color: AppColors.muted, fontSize: AppText.label)),
                   FittedBox(
                     fit: BoxFit.scaleDown,
                     alignment: Alignment.centerLeft,
@@ -489,16 +486,14 @@ class _TrendRow extends StatelessWidget {
                         style:
                             const TextStyle(fontSize: AppText.title, fontWeight: FontWeight.w800)),
                   ),
-                  Text(detail,
-                      style: const TextStyle(color: AppColors.muted, fontSize: AppText.label)),
+                  Text(detail, style: TextStyle(color: AppColors.muted, fontSize: AppText.label)),
                 ],
               ),
             ),
             const SizedBox(width: 8),
             Sparkline(
                 values: trend, color: AppColors.lineForType(type), zeroBased: zeroBased, width: 76),
-            if (onTap != null)
-              const Icon(Icons.chevron_right_rounded, color: AppColors.muted, size: 20),
+            if (onTap != null) Icon(Icons.chevron_right_rounded, color: AppColors.muted, size: 20),
           ],
         ),
       ),
@@ -592,7 +587,7 @@ class _DayRow extends StatelessWidget {
     return InkWell(
       onTap: onTap,
       child: Container(
-        decoration: const BoxDecoration(
+        decoration: BoxDecoration(
           border: Border(top: BorderSide(color: AppColors.divider)),
         ),
         padding: const EdgeInsets.symmetric(vertical: 12),
@@ -605,7 +600,7 @@ class _DayRow extends StatelessWidget {
                 children: [
                   Text(
                     isToday ? 'Today' : DateFormat('EEE').format(day),
-                    style: const TextStyle(fontSize: AppText.caption, color: AppColors.muted),
+                    style: TextStyle(fontSize: AppText.caption, color: AppColors.muted),
                   ),
                   Text(
                     DateFormat('d MMM').format(day),
@@ -616,7 +611,7 @@ class _DayRow extends StatelessWidget {
             ),
             Expanded(
               child: items.isEmpty
-                  ? const Text(
+                  ? Text(
                       'Nothing logged',
                       style: TextStyle(fontSize: AppText.label, color: AppColors.muted),
                     )
@@ -633,7 +628,7 @@ class _DayRow extends StatelessWidget {
                       ),
                     ),
             ),
-            const Icon(Icons.chevron_right_rounded, color: AppColors.muted, size: 20),
+            Icon(Icons.chevron_right_rounded, color: AppColors.muted, size: 20),
           ],
         ),
       ),
@@ -669,7 +664,7 @@ Future<void> _showDaySheet(
           Wrap(spacing: 14, runSpacing: 6, children: _totalItems(Totals.of(entries))),
           const SizedBox(height: 16),
           if (entries.isEmpty)
-            const Padding(
+            Padding(
               padding: EdgeInsets.symmetric(vertical: 24),
               child: Text('Nothing logged on this day.', style: TextStyle(color: AppColors.muted)),
             )
@@ -685,7 +680,7 @@ Future<void> _showDaySheet(
               minimumSize: const Size.fromHeight(48),
               shape: const StadiumBorder(),
               foregroundColor: AppColors.ink,
-              side: const BorderSide(color: AppColors.divider, width: 1.5),
+              side: BorderSide(color: AppColors.divider, width: 1.5),
             ),
             child: const Text('Open on Today to edit'),
           ),

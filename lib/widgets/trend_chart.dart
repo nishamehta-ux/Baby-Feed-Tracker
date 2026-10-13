@@ -73,11 +73,11 @@ class _TrendChartState extends State<TrendChart> {
                     ),
                     TextSpan(
                       text: '  ${DateFormat('EEE d MMM yyyy').format(shown.at)}',
-                      style: const TextStyle(color: AppColors.muted),
+                      style: TextStyle(color: AppColors.muted),
                     ),
                   ],
                 ),
-                style: const TextStyle(color: AppColors.ink),
+                style: TextStyle(color: AppColors.ink),
               ),
               const SizedBox(height: 8),
               GestureDetector(
@@ -150,9 +150,11 @@ class _ChartPainter extends CustomPainter {
     return best;
   }
 
-  TextPainter _text(String s, {Color c = AppColors.muted, FontWeight? w}) => TextPainter(
-        text:
-            TextSpan(text: s, style: TextStyle(fontSize: AppText.caption, color: c, fontWeight: w)),
+  TextPainter _text(String s, {Color? c, FontWeight? w}) => TextPainter(
+        text: TextSpan(
+            text: s,
+            style:
+                TextStyle(fontSize: AppText.caption, color: c ?? AppColors.muted, fontWeight: w)),
         textDirection: TextDirection.ltr,
       )..layout();
 
@@ -217,7 +219,7 @@ class _ChartPainter extends CustomPainter {
     for (var i = 0; i < pts.length; i++) {
       final isKey = i == pts.length - 1 || i == sel;
       if (!dotAll && !isKey) continue;
-      canvas.drawCircle(pts[i], isKey ? 7 : 6, Paint()..color = Colors.white);
+      canvas.drawCircle(pts[i], isKey ? 7 : 6, Paint()..color = AppColors.surface);
       canvas.drawCircle(pts[i], isKey ? 5 : 4, Paint()..color = color);
     }
   }

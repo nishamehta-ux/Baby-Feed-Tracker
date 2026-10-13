@@ -37,9 +37,9 @@ class _MainShellState extends State<MainShell> {
 
   @override
   Widget build(BuildContext context) {
-    // Dark status bar icons over the light header.
+    // Status bar icons that show on the page colour.
     return AnnotatedRegion<SystemUiOverlayStyle>(
-      value: SystemUiOverlayStyle.dark,
+      value: AppColors.dark ? SystemUiOverlayStyle.light : SystemUiOverlayStyle.dark,
       child: Scaffold(
         body: IndexedStack(
           index: _tab,
@@ -53,14 +53,14 @@ class _MainShellState extends State<MainShell> {
             ? FloatingActionButton.extended(
                 onPressed: () => showAddMenu(context, widget.store),
                 backgroundColor: AppColors.primary,
-                foregroundColor: Colors.white,
+                foregroundColor: AppColors.onPrimary,
                 icon: const Icon(Icons.add_rounded),
                 label: const Text('Add an entry'),
               )
             : null,
         bottomNavigationBar: NavigationBar(
           selectedIndex: _tab,
-          backgroundColor: Colors.white,
+          backgroundColor: AppColors.surface,
           indicatorColor: AppColors.selected,
           onDestinationSelected: (i) {
             // Coming back to Today from the tab bar shows today again.

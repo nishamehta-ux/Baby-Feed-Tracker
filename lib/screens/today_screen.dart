@@ -95,7 +95,20 @@ class _TodayScreenState extends State<TodayScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const AppLogo(height: 22),
+                  Row(
+                    children: [
+                      const AppLogo(height: 22),
+                      const Spacer(),
+                      IconButton(
+                        tooltip: 'Appearance',
+                        onPressed: _pickAppearance,
+                        icon: Icon(
+                          AppColors.dark ? Icons.dark_mode_rounded : Icons.light_mode_rounded,
+                          color: AppColors.muted,
+                        ),
+                      ),
+                    ],
+                  ),
                   const SizedBox(height: 16),
                   _buildHeader(context),
                   const SizedBox(height: 24),
@@ -118,6 +131,45 @@ class _TodayScreenState extends State<TodayScreen> {
         ),
       ),
     );
+  }
+
+  /// Light, dark, or following the phone.
+  Future<void> _pickAppearance() async {
+    final picked = await showModalBottomSheet<Appearance>(
+      context: context,
+      showDragHandle: true,
+      builder: (context) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(24, 0, 24, 8),
+              child: Text('Appearance', style: Theme.of(context).textTheme.titleLarge),
+            ),
+            for (final a in Appearance.values)
+              ListTile(
+                contentPadding: const EdgeInsets.symmetric(horizontal: 24),
+                leading: Icon(
+                  switch (a) {
+                    Appearance.system => Icons.brightness_auto_rounded,
+                    Appearance.light => Icons.light_mode_rounded,
+                    Appearance.dark => Icons.dark_mode_rounded,
+                  },
+                  color: AppColors.ink,
+                ),
+                title: Text(a.label),
+                trailing: store.appearance == a
+                    ? Icon(Icons.check_rounded, color: AppColors.primary)
+                    : null,
+                onTap: () => Navigator.pop(context, a),
+              ),
+            const SizedBox(height: 8),
+          ],
+        ),
+      ),
+    );
+    if (picked != null) await store.setAppearance(picked);
   }
 
   /// Stops the live timer and opens it in the drawer to review and save.
@@ -177,7 +229,7 @@ class _TodayScreenState extends State<TodayScreen> {
             ),
           ),
           const SizedBox(width: 8),
-          const Icon(Icons.edit_rounded, color: AppColors.ink, size: 20),
+          Icon(Icons.edit_rounded, color: AppColors.ink, size: 20),
         ],
       ),
     );
@@ -224,15 +276,14 @@ class _TodayScreenState extends State<TodayScreen> {
                             child: Text(
                               DateFormat('d MMMM yyyy').format(day),
                               overflow: TextOverflow.ellipsis,
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontWeight: FontWeight.w700,
                                 color: AppColors.muted,
                               ),
                             ),
                           ),
                           const SizedBox(width: 4),
-                          const Icon(Icons.calendar_month_rounded,
-                              size: 18, color: AppColors.muted),
+                          Icon(Icons.calendar_month_rounded, size: 18, color: AppColors.muted),
                         ],
                       ),
                     ),
@@ -260,12 +311,12 @@ class _TodayScreenState extends State<TodayScreen> {
                   const TextSpan(text: 'Last feeding '),
                   TextSpan(
                     text: timeAgo(last.start, now),
-                    style: const TextStyle(fontWeight: FontWeight.w700, color: AppColors.ink),
+                    style: TextStyle(fontWeight: FontWeight.w700, color: AppColors.ink),
                   ),
                   TextSpan(text: ' · ${last.type.shortLabel} ${entryDetail(last)}'),
                 ],
               ),
-              style: const TextStyle(color: AppColors.muted),
+              style: TextStyle(color: AppColors.muted),
             ),
           ],
           if (entries.isNotEmpty) ...[
@@ -321,7 +372,7 @@ class _TodayScreenState extends State<TodayScreen> {
               if (entries.isNotEmpty)
                 Text(
                   '${entries.length} ${entries.length == 1 ? 'entry' : 'entries'}',
-                  style: const TextStyle(color: AppColors.muted),
+                  style: TextStyle(color: AppColors.muted),
                 ),
             ],
           ),
@@ -332,7 +383,7 @@ class _TodayScreenState extends State<TodayScreen> {
               child: Center(
                 child: Text(
                   isToday ? 'Nothing logged yet today.' : 'Nothing logged on this day.',
-                  style: const TextStyle(color: AppColors.muted),
+                  style: TextStyle(color: AppColors.muted),
                 ),
               ),
             )
@@ -351,7 +402,7 @@ class _TodayScreenState extends State<TodayScreen> {
                 child: TimelineTile(entry: e, onTap: () => _openEditor(e)),
               ),
             const SizedBox(height: 8),
-            const Text(
+            Text(
               'Tap to edit · swipe left to delete',
               style: TextStyle(fontSize: AppText.label, color: AppColors.muted),
             ),
@@ -398,10 +449,10 @@ class _SummaryChip extends StatelessWidget {
                 TextSpan(
                   children: [
                     TextSpan(text: value, style: const TextStyle(fontWeight: FontWeight.w700)),
-                    TextSpan(text: ' $label', style: const TextStyle(color: AppColors.muted)),
+                    TextSpan(text: ' $label', style: TextStyle(color: AppColors.muted)),
                   ],
                 ),
-                style: const TextStyle(fontSize: AppText.body, color: AppColors.ink),
+                style: TextStyle(fontSize: AppText.body, color: AppColors.ink),
               ),
             ),
           ),

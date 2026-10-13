@@ -2,6 +2,7 @@ import 'package:baby_feed_tracker/data/entry_store.dart';
 import 'package:baby_feed_tracker/main.dart';
 import 'package:baby_feed_tracker/models/entry.dart';
 import 'package:baby_feed_tracker/screens/entry_sheet.dart';
+import 'package:baby_feed_tracker/theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -307,6 +308,27 @@ void main() {
     await tester.tap(find.text('Open on Today to edit'));
     await tester.pumpAndSettle();
     expect(find.text('Timeline'), findsOneWidget);
+  });
+
+  testWidgets('appearance switches to dark and is remembered', (tester) async {
+    final store = await _startApp(tester);
+    expect(AppColors.dark, isFalse);
+
+    await tester.tap(find.byTooltip('Appearance'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Dark'));
+    await tester.pumpAndSettle();
+    expect(store.appearance, Appearance.dark);
+    expect(AppColors.dark, isTrue);
+    expect(find.text('Nothing logged yet today.'), findsOneWidget);
+
+    final reloaded = EntryStore();
+    await reloaded.load();
+    expect(reloaded.appearance, Appearance.dark);
+
+    await store.setAppearance(Appearance.system);
+    await tester.pumpAndSettle();
+    expect(AppColors.dark, isFalse);
   });
 
   testWidgets('trends switch to months', (tester) async {

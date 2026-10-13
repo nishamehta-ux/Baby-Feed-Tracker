@@ -21,12 +21,14 @@ class AppMark extends StatelessWidget {
 /// Mark plus the "Oh baby baby!" wordmark (in Nunito, the logo's typeface), for use
 /// on the header.
 class AppLogo extends StatelessWidget {
-  const AppLogo({super.key, this.height = 30, this.color = AppColors.ink});
+  const AppLogo({super.key, this.height = 30, this.color});
 
   static const name = 'Oh baby baby!';
 
   final double height;
-  final Color color;
+
+  /// Defaults to the text colour.
+  final Color? color;
 
   @override
   Widget build(BuildContext context) {
@@ -41,7 +43,7 @@ class AppLogo extends StatelessWidget {
             Text(
               name,
               style: TextStyle(
-                color: color,
+                color: color ?? AppColors.ink,
                 fontFamily: 'Nunito',
                 fontSize: height * 0.75,
                 fontWeight: FontWeight.w800,
@@ -89,12 +91,12 @@ class _MarkPainter extends CustomPainter {
       ..quadraticBezierTo(39, 62, 45, 55)
       ..moveTo(55, 55)
       ..quadraticBezierTo(61, 62, 67, 55);
-    canvas.drawPath(eyes, stroke(AppColors.ink, 4));
+    canvas.drawPath(eyes, stroke(AppColors.slate, 4));
 
     // "Oh" mouth.
     canvas.drawOval(
       Rect.fromCenter(center: const Offset(50, 71), width: 10, height: 12),
-      Paint()..color = AppColors.ink,
+      Paint()..color = AppColors.slate,
     );
   }
 
