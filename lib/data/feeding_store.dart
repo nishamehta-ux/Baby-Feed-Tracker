@@ -17,9 +17,15 @@ class FeedingStore extends ChangeNotifier {
   List<Feeding> get feedings => List.unmodifiable(_feedings);
   String get babyName => _babyName;
 
-  Feeding? get lastFeeding {
-    if (_feedings.isEmpty) return null;
-    return _feedings.reduce((a, b) => a.start.isAfter(b.start) ? a : b);
+  Feeding? get lastFeeding => lastWhere((_) => true);
+
+  /// The most recent feeding (by start time) that matches [test].
+  Feeding? lastWhere(bool Function(Feeding f) test) {
+    Feeding? last;
+    for (final f in _feedings) {
+      if (test(f) && (last == null || f.start.isAfter(last.start))) last = f;
+    }
+    return last;
   }
 
   Future<void> load() async {

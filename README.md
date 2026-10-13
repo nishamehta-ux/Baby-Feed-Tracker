@@ -6,12 +6,12 @@ A simple Flutter app for logging a baby's feedings and seeing daily and weekly s
 
 ## Features
 
-- **Two ways to log a feeding**
-  - **Breastfeeding**: tap the Left/Right circles to start, pause or switch the side timers. You can also type each side's time. Choose which breast you ended with (required).
-  - **Bottle feeding**: choose what's in the bottle (**formula** or expressed **breast milk**), then set the amount with the bottle gauge (tap or drag it), the −/+ buttons (10 ml steps), or by typing.
-  - Every entry has a start and end date/time and optional notes.
+- **Logging happens in drawers.** *Add a feeding* opens a drawer to pick Breastfeeding or Bottle feeding; each opens a tall drawer with Close, the title and Save at the top.
+  - **Breastfeeding**: start, pause or switch the left and right timers, or tap the pencil to type a side's time. A "Last side" tag marks where the previous feed ended. *Ended on* fills in from the last timer used.
+  - **Bottle feeding**: pick **breast milk** or **formula**, set the amount with −/+ (10 ml steps) or by typing, or tap **Yes** to reuse the last amount.
+  - Both have a start time and notes. Closing a drawer with unsaved input asks first; editing a feeding adds *Delete feeding*.
 - **Two tabs**
-  - **Today** (landing page): *Add a feeding*, the time of the last feeding, today's totals and the list of feedings. Arrows step back through earlier days. Tap a feeding to edit it, swipe left to delete it (with undo).
+  - **Today** (landing page): *Add a feeding*, a *Last feeding* card (how long ago and how much), a **Summary** for *Today* or the *Last 24 h* (a count per feeding type, breastfeeding time with left/right, bottle total split into breast milk and formula), and the **Timeline** of feedings. Arrows step back through earlier days. Tap a feeding to edit it, swipe left to delete it (with undo).
   - **Week**: the average per day for breastfeeding, formula and breast milk by bottle, the change on last week, and a small line showing the last 8 weeks. Below that is a list of the days; tap one to open it on the Today tab. Current-week averages count finished days only.
 - The baby's name can be edited by tapping it.
 - Data is stored on the device with `shared_preferences`.
@@ -47,14 +47,14 @@ lib/
   models/summary.dart          daily/weekly totals and formatting
   data/feeding_store.dart      in-memory store persisted to shared_preferences
   screens/main_shell.dart      bottom tabs (Today, Week)
-  screens/today_screen.dart    landing page: add a feeding + day overview
+  screens/today_screen.dart    landing page: last feeding, summary, timeline
+  screens/feeding_sheet.dart   add/edit drawers
   screens/week_screen.dart     weekly summary
-  screens/add_feeding_screen.dart  add/edit a feeding
-  widgets/                     logo, bottle gauge, shared UI
+  widgets/                     logo, shared UI
 ```
 
 ## Screenshots
 
-| Week | Today | Breastfeeding | Bottle |
+| Week | Today | Breastfeeding drawer | Bottle drawer |
 |---|---|---|---|
 | ![](docs/screenshots/week.png) | ![](docs/screenshots/day.png) | ![](docs/screenshots/add_breastfeeding.png) | ![](docs/screenshots/add_bottle.png) |

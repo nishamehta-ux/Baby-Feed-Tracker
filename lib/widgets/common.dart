@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 
 import '../models/feeding.dart';
-import '../models/summary.dart';
 import '../theme.dart';
 
 /// White rounded card that sits on top of the purple header.
@@ -52,60 +51,6 @@ class _CurveClipper extends CustomClipper<Path> {
 
   @override
   bool shouldReclip(covariant CustomClipper<Path> oldClipper) => false;
-}
-
-class TotalChip extends StatelessWidget {
-  const TotalChip({super.key, required this.type, required this.label});
-
-  final FeedingType type;
-  final String label;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-      decoration: BoxDecoration(
-        color: AppColors.forType(type),
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Text(
-        label,
-        style: TextStyle(
-          color: AppColors.onType(type),
-          fontSize: 15,
-          fontWeight: FontWeight.w600,
-        ),
-      ),
-    );
-  }
-}
-
-class TotalsRow extends StatelessWidget {
-  const TotalsRow({super.key, required this.totals});
-
-  final FeedingTotals totals;
-
-  @override
-  Widget build(BuildContext context) {
-    return Wrap(
-      spacing: 8,
-      runSpacing: 8,
-      children: [
-        TotalChip(
-          type: FeedingType.breast,
-          label: 'Breastfeeding: ${formatDuration(totals.breast)}',
-        ),
-        TotalChip(
-          type: FeedingType.bottle,
-          label: 'Formula: ${totals.bottleMl} ml',
-        ),
-        TotalChip(
-          type: FeedingType.breastMilk,
-          label: 'Breast milk: ${totals.breastMilkMl} ml',
-        ),
-      ],
-    );
-  }
 }
 
 class FeedingTypeIcon extends StatelessWidget {

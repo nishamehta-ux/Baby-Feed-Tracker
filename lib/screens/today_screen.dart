@@ -7,7 +7,7 @@ import '../models/summary.dart';
 import '../theme.dart';
 import '../widgets/app_logo.dart';
 import '../widgets/common.dart';
-import 'add_feeding_screen.dart';
+import 'feeding_sheet.dart';
 
 /// Landing page: add a feeding, and the overview of one day (today by default).
 class TodayScreen extends StatefulWidget {
@@ -21,6 +21,8 @@ class TodayScreen extends StatefulWidget {
 }
 
 class _TodayScreenState extends State<TodayScreen> {
+  _Range _range = _Range.today;
+
   FeedingStore get store => widget.store;
 
   DateTime get _today => dateOnly(DateTime.now());
@@ -31,13 +33,8 @@ class _TodayScreenState extends State<TodayScreen> {
     widget.day.value = next.isAfter(_today) ? _today : next;
   }
 
-  Future<void> _openEditor({Feeding? existing}) async {
-    await Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (_) => AddFeedingScreen(store: store, existing: existing),
-      ),
-    );
-  }
+  Future<void> _openEditor(Feeding existing) =>
+      showFeedingSheet(context, store, existing: existing, onDeleted: _offerUndo);
 
   Future<void> _editBabyName() async {
     final controller = TextEditingController(text: store.babyName);
@@ -68,6 +65,10 @@ class _TodayScreenState extends State<TodayScreen> {
 
   Future<void> _delete(Feeding feeding) async {
     await store.delete(feeding.id);
+    _offerUndo(feeding);
+  }
+
+  void _offerUndo(Feeding feeding) {
     if (!mounted) return;
     ScaffoldMessenger.of(context)
       ..hideCurrentSnackBar()
@@ -100,7 +101,7 @@ class _TodayScreenState extends State<TodayScreen> {
                     const SizedBox(height: 20),
                     _buildHeader(context),
                     const SizedBox(height: 24),
-                    _AddFeedingButton(onTap: () => _openEditor()),
+                    _AddFeedingButton(onTap: () => showAddFeedingMenu(context, store)),
                     const SizedBox(height: 18),
                     _buildOverview(context),
                   ],
@@ -136,9 +137,16 @@ class _TodayScreenState extends State<TodayScreen> {
 
   Widget _buildOverview(BuildContext context) {
     final day = widget.day.value;
-    final feedings = feedingsOnDay(store.feedings, day);
-    final totals = FeedingTotals.of(feedings);
     final isToday = day == _today;
+    final now = DateTime.now();
+    final last24 = isToday && _range == _Range.last24Hours;
+    final feedings = last24
+        ? (store.feedings
+            .where((f) => f.start.isAfter(now.subtract(const Duration(hours: 24))))
+            .toList()
+          ..sort((a, b) => a.start.compareTo(b.start)))
+        : feedingsOnDay(store.feedings, day);
+    final totals = FeedingTotals.of(feedings);
     final title = isToday
         ? 'Today'
         : day == DateTime(_today.year, _today.month, _today.day - 1)
@@ -183,33 +191,65 @@ class _TodayScreenState extends State<TodayScreen> {
               ),
             ],
           ),
-          const SizedBox(height: 16),
-          _LastFeedingBanner(feeding: store.lastFeeding),
-          const SizedBox(height: 20),
-          Text(
-            isToday ? 'Total today' : 'Total for the day',
-            style: Theme.of(context).textTheme.titleMedium,
+          if (store.lastFeeding case final last?) ...[
+            const SizedBox(height: 16),
+            _LastFeedingCard(feeding: last, now: now, onTap: () => _openEditor(last)),
+          ],
+          const SizedBox(height: 24),
+          Row(
+            children: [
+              Expanded(
+                child: Text('Summary', style: Theme.of(context).textTheme.titleMedium),
+              ),
+              if (isToday)
+                SegmentedButton<_Range>(
+                  showSelectedIcon: false,
+                  style: const ButtonStyle(visualDensity: VisualDensity.compact),
+                  segments: const [
+                    ButtonSegment(value: _Range.today, label: Text('Today')),
+                    ButtonSegment(value: _Range.last24Hours, label: Text('Last 24 h')),
+                  ],
+                  selected: {_range},
+                  onSelectionChanged: (v) => setState(() => _range = v.first),
+                ),
+            ],
           ),
-          const SizedBox(height: 8),
-          TotalsRow(totals: totals),
-          const SizedBox(height: 8),
-          Text(
-            '${totals.count} feeding${totals.count == 1 ? '' : 's'}',
-            style: const TextStyle(color: AppColors.muted),
-          ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 4),
+          if (totals.breastCount > 0)
+            _SummaryRow(
+              type: FeedingType.breast,
+              title: 'Breastfeeding',
+              count: totals.breastCount,
+              lines: [
+                '${formatDuration(totals.breast)} total',
+                if (totals.breastLeft + totals.breastRight > Duration.zero)
+                  'Left ${formatDuration(totals.breastLeft)} · Right ${formatDuration(totals.breastRight)}',
+              ],
+            ),
+          if (totals.anyBottleCount > 0)
+            _SummaryRow(
+              type: FeedingType.bottle,
+              title: 'Bottle feeding',
+              count: totals.anyBottleCount,
+              lines: [
+                '${totals.totalMl} ml total',
+                if (totals.breastMilkMl > 0) '${totals.breastMilkMl} ml breast milk',
+                if (totals.bottleMl > 0) '${totals.bottleMl} ml formula',
+              ],
+            ),
           if (feedings.isEmpty)
-            const Padding(
-              padding: EdgeInsets.symmetric(vertical: 24),
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 24),
               child: Center(
                 child: Text(
-                  'No feedings logged on this day yet.',
-                  style: TextStyle(color: AppColors.muted),
+                  isToday ? 'Nothing logged yet today.' : 'Nothing logged on this day.',
+                  style: const TextStyle(color: AppColors.muted),
                 ),
               ),
             )
           else ...[
-            Text('Feedings', style: Theme.of(context).textTheme.titleMedium),
+            const SizedBox(height: 20),
+            Text('Timeline', style: Theme.of(context).textTheme.titleMedium),
             const SizedBox(height: 4),
             for (final f in feedings.reversed)
               Dismissible(
@@ -218,11 +258,15 @@ class _TodayScreenState extends State<TodayScreen> {
                 background: Container(
                   alignment: Alignment.centerRight,
                   padding: const EdgeInsets.only(right: 16),
-                  color: Colors.red.shade400,
+                  color: AppColors.danger,
                   child: const Icon(Icons.delete_outline, color: Colors.white),
                 ),
                 onDismissed: (_) => _delete(f),
-                child: _FeedingTile(feeding: f, onTap: () => _openEditor(existing: f)),
+                child: _FeedingTile(
+                  feeding: f,
+                  showDay: last24 && !isSameDay(f.start, now),
+                  onTap: () => _openEditor(f),
+                ),
               ),
             const SizedBox(height: 8),
             const Text(
@@ -235,6 +279,8 @@ class _TodayScreenState extends State<TodayScreen> {
     );
   }
 }
+
+enum _Range { today, last24Hours }
 
 class _AddFeedingButton extends StatelessWidget {
   const _AddFeedingButton({required this.onTap});
@@ -272,45 +318,138 @@ class _AddFeedingButton extends StatelessWidget {
   }
 }
 
-class _LastFeedingBanner extends StatelessWidget {
-  const _LastFeedingBanner({required this.feeding});
+/// The most recent feeding: how long ago it was and how much.
+class _LastFeedingCard extends StatelessWidget {
+  const _LastFeedingCard({required this.feeding, required this.now, required this.onTap});
 
-  final Feeding? feeding;
+  final Feeding feeding;
+  final DateTime now;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
     final f = feeding;
-    final String text;
-    if (f == null) {
-      text = 'No feedings yet. Tap "Add a feeding" to start.';
-    } else {
-      final today = dateOnly(DateTime.now());
-      final day = dateOnly(f.start);
-      final when = day == today
-          ? 'today'
-          : day == today.subtract(const Duration(days: 1))
-              ? 'yesterday'
-              : 'on ${DateFormat('d MMM').format(day)}';
-      final hm = DateFormat.Hm();
-      text = 'The last feeding was $when from ${hm.format(f.start)} to ${hm.format(f.end)}';
-    }
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-      decoration: BoxDecoration(
-        color: AppColors.banner,
-        borderRadius: BorderRadius.circular(14),
+    final isBreast = f.type == FeedingType.breast;
+    final value = isBreast ? '${f.breastDuration.inMinutes}' : '${f.amountMl}';
+    final unit = isBreast ? 'min' : 'ml';
+    return Material(
+      color: AppColors.banner,
+      borderRadius: BorderRadius.circular(16),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(16),
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(14, 12, 16, 12),
+          child: Row(
+            children: [
+              FeedingTypeIcon(type: f.type, size: 44),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Last feeding',
+                      style: TextStyle(fontSize: 17, fontWeight: FontWeight.w800, color: AppColors.ink),
+                    ),
+                    Text(
+                      '${timeAgo(f.start, now)} · ${f.type.shortLabel}',
+                      style: const TextStyle(color: AppColors.ink),
+                    ),
+                  ],
+                ),
+              ),
+              Text(
+                value,
+                style: const TextStyle(fontSize: 40, fontWeight: FontWeight.w300, color: AppColors.ink, height: 1),
+              ),
+              const SizedBox(width: 3),
+              Padding(
+                padding: const EdgeInsets.only(bottom: 18),
+                child: Text(unit, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: AppColors.ink)),
+              ),
+            ],
+          ),
+        ),
       ),
-      child: Text(text, style: const TextStyle(fontSize: 15)),
+    );
+  }
+}
+
+/// One feeding type in the summary: icon, name with a count badge, then totals.
+class _SummaryRow extends StatelessWidget {
+  const _SummaryRow({
+    required this.type,
+    required this.title,
+    required this.count,
+    required this.lines,
+  });
+
+  final FeedingType type;
+  final String title;
+  final int count;
+  final List<String> lines;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 14),
+      decoration: const BoxDecoration(
+        border: Border(bottom: BorderSide(color: AppColors.divider)),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          FeedingTypeIcon(type: type, size: 44),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Wrap(
+                  spacing: 8,
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  children: [
+                    Text(
+                      title,
+                      style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: AppColors.ink),
+                    ),
+                    Semantics(
+                      label: '$count times',
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 1),
+                        decoration: BoxDecoration(
+                          color: AppColors.forType(type),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Text(
+                          '$count',
+                          style: TextStyle(fontWeight: FontWeight.w800, color: AppColors.onType(type)),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 4),
+                for (final line in lines)
+                  Text(line, style: const TextStyle(fontSize: 16, color: AppColors.ink)),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
 
 class _FeedingTile extends StatelessWidget {
-  const _FeedingTile({required this.feeding, required this.onTap});
+  const _FeedingTile({required this.feeding, required this.onTap, this.showDay = false});
 
   final Feeding feeding;
   final VoidCallback onTap;
+
+  /// Prefix the time with the day, for entries from before today.
+  final bool showDay;
 
   @override
   Widget build(BuildContext context) {
@@ -319,11 +458,8 @@ class _FeedingTile extends StatelessWidget {
     final String detail;
     if (f.type == FeedingType.breast) {
       final parts = <String>[formatDuration(f.breastDuration)];
-      if (f.leftDuration > Duration.zero) parts.add('L ${formatClock(f.leftDuration)}');
-      if (f.rightDuration > Duration.zero) parts.add('R ${formatClock(f.rightDuration)}');
-      if (f.endSide != null) {
-        parts.add('ended ${f.endSide == BreastSide.left ? 'left' : 'right'}');
-      }
+      if (f.leftDuration > Duration.zero) parts.add('L ${formatDuration(f.leftDuration)}');
+      if (f.rightDuration > Duration.zero) parts.add('R ${formatDuration(f.rightDuration)}');
       detail = parts.join(' · ');
     } else {
       detail = '${f.amountMl} ml';
@@ -355,7 +491,8 @@ class _FeedingTile extends StatelessWidget {
               ),
             ),
             Text(
-              '${hm.format(f.start)}–${hm.format(f.end)}',
+              '${showDay ? 'Yesterday ' : ''}${hm.format(f.start)}'
+              '${f.type == FeedingType.breast ? '–${hm.format(f.end)}' : ''}',
               style: const TextStyle(fontWeight: FontWeight.w600),
             ),
           ],

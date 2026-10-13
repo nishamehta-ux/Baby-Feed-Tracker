@@ -18,6 +18,8 @@ class AppColors {
   static const soft = cream;
   static const softBorder = mint;
   static const banner = cream;
+  static const divider = Color(0xFFE4E6D8);
+  static const danger = Color(0xFFA33A2E);
 
   // Feeding types: fills use the palette as is.
   static const breast = indigo;
@@ -69,7 +71,7 @@ ThemeData buildTheme() {
         backgroundColor: AppColors.primary,
         minimumSize: const Size.fromHeight(56),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-        textStyle: const TextStyle(fontSize: 17, fontWeight: FontWeight.w700),
+        textStyle: const TextStyle(fontFamily: 'Nunito', fontSize: 17, fontWeight: FontWeight.w700),
       ),
     ),
   );
