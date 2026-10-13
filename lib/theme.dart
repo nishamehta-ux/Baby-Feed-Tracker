@@ -37,7 +37,7 @@ class AppColors {
   static Color get primary => _pick(steel, const Color(0xFFA9C3D6));
   static Color get onPrimary => _pick(Colors.white, const Color(0xFF14191F));
   static Color get ink => _pick(slate, const Color(0xFFE8ECEF));
-  static Color get muted => _pick(const Color(0xFF6B7480), const Color(0xFF9AA4AE));
+  static Color get muted => _pick(const Color(0xFF5C6570), const Color(0xFF9AA4AE));
   static Color get background => _pick(linen, const Color(0xFF15191E));
 
   /// Cards and sheets.
@@ -56,48 +56,50 @@ class AppColors {
 
   /// Selected and running states (segments, pills, a timed side). Kept apart
   /// from [primary], which is only for the main action on a screen.
-  static Color get selected => _pick(mist, const Color(0xFF3A4D5C));
+  static Color get selected => _pick(const Color(0xFFC3D4DF), const Color(0xFF44607A));
   static Color get onSelected => ink;
 
   /// Fill for each kind of entry: the icon circle and the drawer header.
   /// Feeds share one colour (their icons tell them apart), so the timeline
   /// reads as feeds, pumping, diapers and routines at a glance; Other is the
-  /// card colour with an outline. The pastels stay the same in dark mode.
+  /// card colour with an outline. Dark mode uses deep tones of the same hues
+  /// with light icons, so nothing glares at night.
   static Color forType(EntryType type) => switch (type) {
-        EntryType.breast || EntryType.bottle || EntryType.breastMilk => taupe,
-        EntryType.pump => mist,
-        EntryType.diaper => mint,
-        EntryType.routine => lilac,
+        EntryType.breast ||
+        EntryType.bottle ||
+        EntryType.breastMilk =>
+          _pick(taupe, const Color(0xFF5C4A40)),
+        EntryType.pump => _pick(mist, const Color(0xFF3D5566)),
+        EntryType.diaper => _pick(mint, const Color(0xFF3C5850)),
+        EntryType.routine => _pick(lilac, const Color(0xFF4E4865)),
         EntryType.other => surface,
       };
 
-  /// The band at the top of a drawer or chart sheet. In dark mode a soft tint
-  /// of the group colour, so a sheet opened at night doesn't glare.
-  static Color headerForType(EntryType type) {
-    if (outlined(type)) return field;
-    return dark ? Color.lerp(surface, forType(type), 0.22)! : forType(type);
-  }
+  /// The band at the top of a drawer or chart sheet.
+  static Color headerForType(EntryType type) => outlined(type) ? field : forType(type);
 
   /// Text and icons on [headerForType].
-  static Color onHeaderForType(EntryType type) => dark ? ink : onType(type);
+  static Color onHeaderForType(EntryType type) => outlined(type) ? ink : onType(type);
 
   /// Kinds drawn as a plain tile with an outline.
   static bool outlined(EntryType type) => type == EntryType.other;
 
-  /// Text and icons placed on a [forType] fill: dark on the pastels in both
-  /// modes.
-  static Color onType(EntryType type) => outlined(type) ? ink : slate;
+  /// Text and icons placed on a [forType] fill: slate on the light pastels,
+  /// near-white on the deep dark-mode tones (at least 6.5:1 either way).
+  static Color onType(EntryType type) =>
+      outlined(type) ? ink : _pick(slate, const Color(0xFFF3ECE7));
 
   /// Deeper (light mode) or brighter (dark mode) steps of the same hues for
-  /// thin lines and small icons, which the pastel fills are too soft for.
+  /// thin lines and small icons, which the fills are too soft for. Each is
+  /// at least 4.5:1 against the cards.
   static Color lineForType(EntryType type) => switch (type) {
         EntryType.breast ||
         EntryType.bottle ||
         EntryType.breastMilk =>
-          _pick(const Color(0xFFA27B66), const Color(0xFFD9B8A6)),
-        EntryType.pump => _pick(const Color(0xFF5B7C93), const Color(0xFFA9C3D6)),
-        EntryType.diaper => _pick(const Color(0xFF5E8A7C), const Color(0xFFA8CFC2)),
-        EntryType.routine => _pick(const Color(0xFF7A6E94), const Color(0xFFB8ADD2)),
+          _pick(const Color(0xFF8E6A57), const Color(0xFFD9B8A6)),
+        EntryType.pump => _pick(const Color(0xFF4F7189), const Color(0xFFA9C3D6)),
+        EntryType.diaper => _pick(const Color(0xFF4F7A6C), const Color(0xFFA8CFC2)),
+        EntryType.routine => _pick(const Color(0xFF6E6290), const Color(0xFFB8ADD2)),
         EntryType.other => muted,
       };
 }

@@ -66,4 +66,14 @@ void main() {
     expect(formatDuration(const Duration(hours: 1)), '1 h');
     expect(formatDuration(const Duration(minutes: 13)), '13 m');
   });
+
+  test('ageText reads naturally at each stage', () {
+    final now = DateTime(2026, 10, 13);
+    expect(ageText(DateTime(2026, 10, 12), now), '1 day old');
+    expect(ageText(DateTime(2026, 10, 3), now), '10 days old');
+    expect(ageText(DateTime(2026, 9, 1), now), '6 weeks old');
+    expect(ageText(DateTime(2026, 5, 13), now), '5 months old');
+    expect(ageText(DateTime(2026, 5, 14), now), '4 months old');
+    expect(ageText(DateTime(2024, 9, 13), now), '2 years 1 month old');
+  });
 }

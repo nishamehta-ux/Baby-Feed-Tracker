@@ -13,10 +13,18 @@ import 'entry_sheet.dart';
 
 /// Landing page: add a feeding, and the overview of one day (today by default).
 class TodayScreen extends StatefulWidget {
-  const TodayScreen({super.key, required this.store, required this.day});
+  const TodayScreen({
+    super.key,
+    required this.store,
+    required this.day,
+    required this.onOpenProfile,
+  });
 
   final EntryStore store;
   final ValueNotifier<DateTime> day;
+
+  /// Shows the Profile tab (from the baby's photo and name).
+  final VoidCallback onOpenProfile;
 
   @override
   State<TodayScreen> createState() => _TodayScreenState();
@@ -35,33 +43,6 @@ class _TodayScreenState extends State<TodayScreen> {
 
   Future<void> _openEditor(Entry existing) =>
       showEntrySheet(context, store, existing: existing, onDeleted: _offerUndo);
-
-  Future<void> _editBabyName() async {
-    final controller = TextEditingController(text: store.babyName);
-    final name = await showDialog<String>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text("Baby's name"),
-        content: TextField(
-          controller: controller,
-          autofocus: true,
-          textCapitalization: TextCapitalization.words,
-          onSubmitted: (v) => Navigator.pop(context, v),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(context, controller.text),
-            child: const Text('Save'),
-          ),
-        ],
-      ),
-    );
-    if (name != null) await store.setBabyName(name);
-  }
 
   Future<void> _delete(Entry feeding) async {
     await store.delete(feeding.id);
@@ -95,20 +76,7 @@ class _TodayScreenState extends State<TodayScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Row(
-                    children: [
-                      const AppLogo(height: 22),
-                      const Spacer(),
-                      IconButton(
-                        tooltip: 'Appearance',
-                        onPressed: _pickAppearance,
-                        icon: Icon(
-                          AppColors.dark ? Icons.dark_mode_rounded : Icons.light_mode_rounded,
-                          color: AppColors.muted,
-                        ),
-                      ),
-                    ],
-                  ),
+                  const AppLogo(height: 22),
                   const SizedBox(height: 16),
                   _buildHeader(context),
                   const SizedBox(height: 24),
@@ -131,45 +99,6 @@ class _TodayScreenState extends State<TodayScreen> {
         ),
       ),
     );
-  }
-
-  /// Light, dark, or following the phone.
-  Future<void> _pickAppearance() async {
-    final picked = await showModalBottomSheet<Appearance>(
-      context: context,
-      showDragHandle: true,
-      builder: (context) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(24, 0, 24, 8),
-              child: Text('Appearance', style: Theme.of(context).textTheme.titleLarge),
-            ),
-            for (final a in Appearance.values)
-              ListTile(
-                contentPadding: const EdgeInsets.symmetric(horizontal: 24),
-                leading: Icon(
-                  switch (a) {
-                    Appearance.system => Icons.brightness_auto_rounded,
-                    Appearance.light => Icons.light_mode_rounded,
-                    Appearance.dark => Icons.dark_mode_rounded,
-                  },
-                  color: AppColors.ink,
-                ),
-                title: Text(a.label),
-                trailing: store.appearance == a
-                    ? Icon(Icons.check_rounded, color: AppColors.primary)
-                    : null,
-                onTap: () => Navigator.pop(context, a),
-              ),
-            const SizedBox(height: 8),
-          ],
-        ),
-      ),
-    );
-    if (picked != null) await store.setAppearance(picked);
   }
 
   /// Stops the live timer and opens it in the drawer to review and save.
@@ -215,21 +144,31 @@ class _TodayScreenState extends State<TodayScreen> {
   }
 
   Widget _buildHeader(BuildContext context) {
+    final birth = store.birthDate;
     return InkWell(
-      onTap: _editBabyName,
-      borderRadius: BorderRadius.circular(8),
+      onTap: widget.onOpenProfile,
+      borderRadius: BorderRadius.circular(12),
       child: Row(
-        mainAxisSize: MainAxisSize.min,
         children: [
-          Flexible(
-            child: Text(
-              store.babyName,
-              overflow: TextOverflow.ellipsis,
-              style: Theme.of(context).textTheme.headlineMedium,
+          BabyAvatar(photo: store.photo, size: 52),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  store.babyName,
+                  overflow: TextOverflow.ellipsis,
+                  style: Theme.of(context).textTheme.headlineMedium,
+                ),
+                if (birth != null)
+                  Text(
+                    ageText(birth, DateTime.now()),
+                    style: TextStyle(color: AppColors.muted),
+                  ),
+              ],
             ),
           ),
-          const SizedBox(width: 8),
-          Icon(Icons.edit_rounded, color: AppColors.ink, size: 20),
         ],
       ),
     );

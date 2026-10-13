@@ -310,17 +310,16 @@ void main() {
     expect(find.text('Timeline'), findsOneWidget);
   });
 
-  testWidgets('appearance switches to dark and is remembered', (tester) async {
+  testWidgets('profile switches appearance and remembers it', (tester) async {
     final store = await _startApp(tester);
     expect(AppColors.dark, isFalse);
 
-    await tester.tap(find.byTooltip('Appearance'));
+    await tester.tap(find.text('Profile'));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Dark'));
     await tester.pumpAndSettle();
     expect(store.appearance, Appearance.dark);
     expect(AppColors.dark, isTrue);
-    expect(find.text('Nothing logged yet today.'), findsOneWidget);
 
     final reloaded = EntryStore();
     await reloaded.load();
@@ -329,6 +328,47 @@ void main() {
     await store.setAppearance(Appearance.system);
     await tester.pumpAndSettle();
     expect(AppColors.dark, isFalse);
+  });
+
+  testWidgets('sign in and log out from the profile tab', (tester) async {
+    final store = await _startApp(tester);
+    await tester.tap(find.text('Profile'));
+    await tester.pumpAndSettle();
+    expect(find.text('You are not signed in'), findsOneWidget);
+
+    final signIn = find.widgetWithText(FilledButton, 'Sign in');
+    await tester.ensureVisible(signIn);
+    await tester.pumpAndSettle();
+    await tester.tap(signIn);
+    await tester.pumpAndSettle();
+    await tester.enterText(find.widgetWithText(TextField, 'Your name'), 'Sam');
+    await tester.enterText(find.widgetWithText(TextField, 'Email'), 'not-an-email');
+    await tester.tap(find.widgetWithText(FilledButton, 'Sign in').last);
+    await tester.pump();
+    expect(find.text('Enter a valid email address.'), findsOneWidget);
+    await tester.enterText(find.widgetWithText(TextField, 'Email'), 'sam@example.com');
+    await tester.tap(find.widgetWithText(FilledButton, 'Sign in').last);
+    await tester.pumpAndSettle();
+    expect(store.account?.email, 'sam@example.com');
+    expect(find.text('sam@example.com'), findsOneWidget);
+
+    final logOut = find.widgetWithText(OutlinedButton, 'Log out');
+    await tester.ensureVisible(logOut);
+    await tester.pumpAndSettle();
+    await tester.tap(logOut);
+    await tester.pumpAndSettle();
+    await tester.tap(find.widgetWithText(TextButton, 'Log out'));
+    await tester.pumpAndSettle();
+    expect(store.account, isNull);
+    expect(find.text('You are not signed in'), findsOneWidget);
+  });
+
+  testWidgets('birth date shows the age on Today', (tester) async {
+    final store = await _startApp(tester);
+    final now = DateTime.now();
+    await store.setBirthDate(DateTime(now.year, now.month, now.day - 21));
+    await tester.pumpAndSettle();
+    expect(find.text('3 weeks old'), findsWidgets);
   });
 
   testWidgets('trends switch to months', (tester) async {

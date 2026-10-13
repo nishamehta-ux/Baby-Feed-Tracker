@@ -223,3 +223,18 @@ String entryDetail(Entry e) {
 List<Entry> entriesBetween(Iterable<Entry> all, DateTime from, DateTime to) =>
     all.where((e) => !e.start.isBefore(from) && e.start.isBefore(to)).toList()
       ..sort((a, b) => a.start.compareTo(b.start));
+
+/// The baby's age on [now]: "3 days old", "5 weeks old", "4 months old" or
+/// "1 year 2 months old".
+String ageText(DateTime birth, DateTime now) {
+  final days = dateOnly(now).difference(dateOnly(birth)).inDays;
+  if (days < 0) return 'Not born yet';
+  if (days < 14) return days == 1 ? '1 day old' : '$days days old';
+  if (days < 56) return '${days ~/ 7} weeks old';
+  var months = (now.year - birth.year) * 12 + now.month - birth.month;
+  if (now.day < birth.day) months--;
+  if (months < 24) return months == 1 ? '1 month old' : '$months months old';
+  final years = months ~/ 12, rest = months % 12;
+  final y = years == 1 ? '1 year' : '$years years';
+  return rest == 0 ? '$y old' : '$y $rest month${rest == 1 ? '' : 's'} old';
+}

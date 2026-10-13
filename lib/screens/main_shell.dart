@@ -5,6 +5,7 @@ import '../data/entry_store.dart';
 import '../models/summary.dart';
 import '../theme.dart';
 import 'entry_sheet.dart';
+import 'profile_screen.dart';
 import 'today_screen.dart';
 import 'trends_screen.dart';
 
@@ -44,8 +45,13 @@ class _MainShellState extends State<MainShell> {
         body: IndexedStack(
           index: _tab,
           children: [
-            TodayScreen(store: widget.store, day: _day),
+            TodayScreen(
+              store: widget.store,
+              day: _day,
+              onOpenProfile: () => setState(() => _tab = 2),
+            ),
             TrendsScreen(store: widget.store, onOpenDay: _openDay),
+            ProfileScreen(store: widget.store),
           ],
         ),
         // Adding an entry is the main action on Today.
@@ -77,6 +83,11 @@ class _MainShellState extends State<MainShell> {
               icon: Icon(Icons.insights_outlined),
               selectedIcon: Icon(Icons.insights_rounded),
               label: 'Trends',
+            ),
+            NavigationDestination(
+              icon: Icon(Icons.person_outline_rounded),
+              selectedIcon: Icon(Icons.person_rounded),
+              label: 'Profile',
             ),
           ],
         ),

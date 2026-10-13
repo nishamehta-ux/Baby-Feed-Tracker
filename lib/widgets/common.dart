@@ -1,7 +1,9 @@
+import 'package:flutter/foundation.dart' show Uint8List;
 import 'package:flutter/material.dart';
 
 import '../models/entry.dart';
 import '../theme.dart';
+import 'app_logo.dart';
 
 /// White rounded card on the page. Flat: only the live timer is raised.
 class AppCard extends StatelessWidget {
@@ -162,6 +164,35 @@ class SectionLabel extends StatelessWidget {
         letterSpacing: 0.8,
         color: AppColors.muted,
       ),
+    );
+  }
+}
+
+/// The baby's photo in a circle, or the app's mark when there is none.
+class BabyAvatar extends StatelessWidget {
+  const BabyAvatar({super.key, required this.photo, this.size = 40});
+
+  final Uint8List? photo;
+  final double size;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: size,
+      height: size,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        // Behind the mark when there's no photo: a colour the taupe face shows on.
+        color: AppColors.dark ? AppColors.forType(EntryType.breast) : AppColors.mist,
+        border: Border.all(color: AppColors.surface, width: size > 60 ? 4 : 2),
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: photo == null
+          ? Padding(
+              padding: EdgeInsets.all(size * 0.18),
+              child: AppMark(size: size * 0.64),
+            )
+          : Image.memory(photo!, fit: BoxFit.cover, gaplessPlayback: true),
     );
   }
 }
