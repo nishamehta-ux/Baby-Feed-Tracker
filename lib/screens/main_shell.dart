@@ -50,14 +50,14 @@ class _MainShellState extends State<MainShell> {
               onPressed: () => showAddMenu(context, widget.store),
               backgroundColor: AppColors.indigo,
               foregroundColor: Colors.white,
-              icon: const Icon(Icons.add),
+              icon: const Icon(Icons.add_rounded),
               label: const Text('Add an entry'),
             )
           : null,
       bottomNavigationBar: NavigationBar(
         selectedIndex: _tab,
         backgroundColor: Colors.white,
-        indicatorColor: AppColors.mint,
+        indicatorColor: AppColors.selected,
         onDestinationSelected: (i) {
           // Coming back to Today from the tab bar shows today again.
           if (i == 0 && _tab != 0) _day.value = dateOnly(DateTime.now());
@@ -66,12 +66,12 @@ class _MainShellState extends State<MainShell> {
         destinations: const [
           NavigationDestination(
             icon: Icon(Icons.today_outlined),
-            selectedIcon: Icon(Icons.today),
+            selectedIcon: Icon(Icons.today_rounded),
             label: 'Today',
           ),
           NavigationDestination(
             icon: Icon(Icons.insights_outlined),
-            selectedIcon: Icon(Icons.insights),
+            selectedIcon: Icon(Icons.insights_rounded),
             label: 'Trends',
           ),
         ],

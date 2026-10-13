@@ -24,6 +24,11 @@ class AppColors {
   static const divider = Color(0xFFE4E6D8);
   static const danger = Color(0xFFA33A2E);
 
+  /// Selected and running states (segments, pills, a timed side). Kept apart
+  /// from [primary], which is only for the main action on a screen.
+  static const selected = sage;
+  static const onSelected = ink;
+
   /// Fill for each kind of entry: the icon tile, count badge and drawer header.
   static Color forType(EntryType type) => switch (type) {
         EntryType.breast => indigo,
@@ -48,6 +53,34 @@ class AppColors {
         EntryType.diaper => const Color(0xFF7D8A3A),
         EntryType.routine || EntryType.other => muted,
       };
+}
+
+/// The type scale. Every text size in the app comes from here, so the
+/// levels stay distinct: headline > title > subtitle > body > label > caption.
+class AppText {
+  /// The live timer's clock.
+  static const display = 56.0;
+
+  /// Timers inside a drawer.
+  static const timer = 36.0;
+
+  /// Page, day and drawer titles.
+  static const headline = 24.0;
+
+  /// Key figures, such as a trend's value.
+  static const title = 20.0;
+
+  /// Section headings, buttons and big choices.
+  static const subtitle = 17.0;
+
+  /// Regular text and entry names.
+  static const body = 15.0;
+
+  /// Secondary details, hints and times.
+  static const label = 13.0;
+
+  /// Tags and chart axes.
+  static const caption = 11.0;
 }
 
 ThemeData buildTheme() {
@@ -93,10 +126,12 @@ ThemeData buildTheme() {
         fontWeight: FontWeight.w800,
         color: Colors.white,
       ),
-      titleLarge: TextStyle(fontWeight: FontWeight.w800, color: AppColors.ink),
-      titleMedium: TextStyle(fontWeight: FontWeight.w700, color: AppColors.ink),
-      bodyLarge: TextStyle(color: AppColors.ink),
-      bodyMedium: TextStyle(color: AppColors.ink),
+      titleLarge:
+          TextStyle(fontSize: AppText.headline, fontWeight: FontWeight.w800, color: AppColors.ink),
+      titleMedium:
+          TextStyle(fontSize: AppText.subtitle, fontWeight: FontWeight.w700, color: AppColors.ink),
+      bodyLarge: TextStyle(fontSize: AppText.body, color: AppColors.ink),
+      bodyMedium: TextStyle(fontSize: AppText.body, color: AppColors.ink),
     ),
     filledButtonTheme: FilledButtonThemeData(
       style: FilledButton.styleFrom(
@@ -108,8 +143,8 @@ ThemeData buildTheme() {
     ),
     segmentedButtonTheme: SegmentedButtonThemeData(
       style: SegmentedButton.styleFrom(
-        selectedBackgroundColor: AppColors.mint,
-        selectedForegroundColor: AppColors.ink,
+        selectedBackgroundColor: AppColors.selected,
+        selectedForegroundColor: AppColors.onSelected,
         foregroundColor: AppColors.ink,
         side: const BorderSide(color: AppColors.mint, width: 1.5),
         textStyle: const TextStyle(fontFamily: 'Heros', fontWeight: FontWeight.w700),
@@ -120,7 +155,7 @@ ThemeData buildTheme() {
         (s) => s.contains(WidgetState.selected) ? Colors.white : AppColors.muted,
       ),
       trackColor: WidgetStateProperty.resolveWith(
-        (s) => s.contains(WidgetState.selected) ? AppColors.indigo : AppColors.field,
+        (s) => s.contains(WidgetState.selected) ? AppColors.selected : AppColors.field,
       ),
     ),
     snackBarTheme: const SnackBarThemeData(

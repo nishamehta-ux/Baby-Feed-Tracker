@@ -122,18 +122,18 @@ class _Tile extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  EntryIcon(type: type, size: 32),
+                  EntryIcon(type: type, size: EntryIcon.medium),
                   const SizedBox(height: 10),
                   Text(
                     title,
                     style: const TextStyle(
-                        fontWeight: FontWeight.w700, fontSize: 15, color: AppColors.ink),
+                        fontWeight: FontWeight.w700, fontSize: AppText.body, color: AppColors.ink),
                   ),
                   Text(
                     subtitle,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(fontSize: 13, color: AppColors.muted),
+                    style: const TextStyle(fontSize: AppText.label, color: AppColors.muted),
                   ),
                 ],
               ),
@@ -218,19 +218,21 @@ class _LiveTimerCardState extends State<LiveTimerCard> {
           // Header: what is being timed, and a way out.
           Row(
             children: [
-              EntryIcon(type: live.type, size: 30),
+              EntryIcon(type: live.type, size: EntryIcon.small),
               const SizedBox(width: 10),
               Expanded(
                 child: Text(
                   isBreast ? 'Breastfeeding' : 'Pumping',
                   style: const TextStyle(
-                      fontSize: 16, fontWeight: FontWeight.w700, color: AppColors.ink),
+                      fontSize: AppText.subtitle,
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.ink),
                 ),
               ),
               IconButton(
                 onPressed: _discard,
                 tooltip: live.notStarted ? 'Cancel' : 'Discard',
-                icon: const Icon(Icons.close, color: AppColors.muted),
+                icon: const Icon(Icons.close_rounded, color: AppColors.muted),
               ),
             ],
           ),
@@ -245,7 +247,7 @@ class _LiveTimerCardState extends State<LiveTimerCard> {
                   child: Text(
                     formatClock(live.total(now)),
                     style: TextStyle(
-                      fontSize: 56,
+                      fontSize: AppText.display,
                       height: 1.1,
                       letterSpacing: -1,
                       color: live.notStarted ? AppColors.muted : AppColors.ink,
@@ -261,8 +263,8 @@ class _LiveTimerCardState extends State<LiveTimerCard> {
                       Container(
                         width: 8,
                         height: 8,
-                        decoration: const BoxDecoration(
-                          color: AppColors.sage,
+                        decoration: BoxDecoration(
+                          color: AppColors.lineForType(EntryType.breastMilk),
                           shape: BoxShape.circle,
                         ),
                       ),
@@ -271,7 +273,7 @@ class _LiveTimerCardState extends State<LiveTimerCard> {
                     Flexible(
                       child: Text(
                         status,
-                        style: const TextStyle(fontSize: 14, color: AppColors.muted),
+                        style: const TextStyle(fontSize: AppText.body, color: AppColors.muted),
                       ),
                     ),
                   ],
@@ -314,7 +316,8 @@ class _LiveTimerCardState extends State<LiveTimerCard> {
                     style: FilledButton.styleFrom(
                       minimumSize: const Size.fromHeight(50),
                       shape: const StadiumBorder(),
-                      textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+                      textStyle:
+                          const TextStyle(fontSize: AppText.subtitle, fontWeight: FontWeight.w700),
                     ),
                     child: const Text('Finish'),
                   ),
@@ -353,13 +356,13 @@ class _ControlTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final fg = running ? Colors.white : AppColors.ink;
-    final sub = running ? Colors.white70 : AppColors.muted;
+    final fg = running ? AppColors.onSelected : AppColors.ink;
+    final sub = running ? AppColors.onSelected : AppColors.muted;
     return Semantics(
       button: true,
       label: semanticsLabel,
       child: Material(
-        color: running ? AppColors.indigo : AppColors.field,
+        color: running ? AppColors.selected : AppColors.field,
         borderRadius: BorderRadius.circular(16),
         child: InkWell(
           borderRadius: BorderRadius.circular(16),
@@ -377,12 +380,14 @@ class _ControlTile extends StatelessWidget {
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         if (detail == null) ...[
-                          Icon(running ? Icons.pause : Icons.play_arrow, color: fg, size: 22),
+                          Icon(running ? Icons.pause_rounded : Icons.play_arrow_rounded,
+                              color: fg, size: 20),
                           const SizedBox(width: 6),
                         ],
                         Text(
                           title,
-                          style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700, color: fg),
+                          style: TextStyle(
+                              fontSize: AppText.subtitle, fontWeight: FontWeight.w700, color: fg),
                         ),
                         if (tag != null) ...[
                           const SizedBox(width: 8),
@@ -394,7 +399,8 @@ class _ControlTile extends StatelessWidget {
                             ),
                             child: Text(
                               tag!,
-                              style: const TextStyle(fontSize: 11, color: AppColors.ink),
+                              style:
+                                  const TextStyle(fontSize: AppText.caption, color: AppColors.ink),
                             ),
                           ),
                         ],
@@ -405,12 +411,13 @@ class _ControlTile extends StatelessWidget {
                       Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Icon(running ? Icons.pause : Icons.play_arrow, color: sub, size: 16),
+                          Icon(running ? Icons.pause_rounded : Icons.play_arrow_rounded,
+                              color: sub, size: 18),
                           const SizedBox(width: 4),
                           Text(
                             detail!,
                             style: TextStyle(
-                              fontSize: 14,
+                              fontSize: AppText.body,
                               color: sub,
                               fontFeatures: const [FontFeature.tabularFigures()],
                             ),

@@ -315,7 +315,10 @@ class _TrendsScreenState extends State<TrendsScreen> {
                     children: [
                       Text(
                         _title,
-                        style: Theme.of(context).textTheme.titleLarge?.copyWith(fontSize: 22),
+                        style: Theme.of(context)
+                            .textTheme
+                            .titleLarge
+                            ?.copyWith(fontSize: AppText.headline),
                       ),
                       const SizedBox(height: 2),
                       Row(
@@ -330,7 +333,7 @@ class _TrendsScreenState extends State<TrendsScreen> {
                             ),
                           ),
                           const SizedBox(width: 4),
-                          const Icon(Icons.calendar_month_outlined,
+                          const Icon(Icons.calendar_month_rounded,
                               size: 18, color: AppColors.muted),
                         ],
                       ),
@@ -339,13 +342,13 @@ class _TrendsScreenState extends State<TrendsScreen> {
                 ),
               ),
               RoundIconButton(
-                icon: Icons.chevron_left,
+                icon: Icons.chevron_left_rounded,
                 tooltip: 'Previous $_unit',
                 onPressed: () => _shift(-1),
               ),
               const SizedBox(width: 4),
               RoundIconButton(
-                icon: Icons.chevron_right,
+                icon: Icons.chevron_right_rounded,
                 tooltip: 'Next $_unit',
                 onPressed: isCurrent ? null : () => _shift(1),
               ),
@@ -356,7 +359,7 @@ class _TrendsScreenState extends State<TrendsScreen> {
           if (isCurrent && elapsed > 1)
             const Text(
               "Today is added once it's over.",
-              style: TextStyle(color: AppColors.muted, fontSize: 13),
+              style: TextStyle(color: AppColors.muted, fontSize: AppText.label),
             ),
           const SizedBox(height: 8),
           row(EntryType.breast, 'Breastfeeding', (t) => t.breast.inSeconds / 60,
@@ -369,14 +372,14 @@ class _TrendsScreenState extends State<TrendsScreen> {
           const SizedBox(height: 4),
           Text(
             'The small lines show the last $_span ${_unit}s. Tap a row for its chart.',
-            style: const TextStyle(color: AppColors.muted, fontSize: 12),
+            style: const TextStyle(color: AppColors.muted, fontSize: AppText.label),
           ),
           if (routines.isNotEmpty) ...[
             const SizedBox(height: 24),
             Text('Routines', style: Theme.of(context).textTheme.titleMedium),
             Text(
               isCurrent ? 'Times this $_unit so far, against last $_unit.' : 'Times that $_unit.',
-              style: const TextStyle(color: AppColors.muted, fontSize: 13),
+              style: const TextStyle(color: AppColors.muted, fontSize: AppText.label),
             ),
             const SizedBox(height: 8),
             for (final name in routines) routineRow(name),
@@ -386,7 +389,7 @@ class _TrendsScreenState extends State<TrendsScreen> {
             Text('Measurements', style: Theme.of(context).textTheme.titleMedium),
             const Text(
               'Numbers logged under Other, such as weight. The small lines show the latest readings.',
-              style: TextStyle(color: AppColors.muted, fontSize: 13),
+              style: TextStyle(color: AppColors.muted, fontSize: AppText.label),
             ),
             const SizedBox(height: 8),
             for (final m in measurements) measurementRow(m),
@@ -467,22 +470,26 @@ class _TrendRow extends StatelessWidget {
         padding: const EdgeInsets.symmetric(vertical: 10),
         child: Row(
           children: [
-            EntryIcon(type: type, icon: icon, size: 40),
+            EntryIcon(type: type, icon: icon, size: EntryIcon.large),
             const SizedBox(width: 12),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(name, style: const TextStyle(color: AppColors.muted, fontSize: 13)),
-                  Text(value, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w800)),
-                  Text(detail, style: const TextStyle(color: AppColors.muted, fontSize: 13)),
+                  Text(name,
+                      style: const TextStyle(color: AppColors.muted, fontSize: AppText.label)),
+                  Text(value,
+                      style: const TextStyle(fontSize: AppText.title, fontWeight: FontWeight.w800)),
+                  Text(detail,
+                      style: const TextStyle(color: AppColors.muted, fontSize: AppText.label)),
                 ],
               ),
             ),
             const SizedBox(width: 8),
             Sparkline(
                 values: trend, color: AppColors.lineForType(type), zeroBased: zeroBased, width: 76),
-            if (onTap != null) const Icon(Icons.chevron_right, color: AppColors.muted, size: 20),
+            if (onTap != null)
+              const Icon(Icons.chevron_right_rounded, color: AppColors.muted, size: 20),
           ],
         ),
       ),
@@ -526,7 +533,7 @@ class _DayRow extends StatelessWidget {
                 style: const TextStyle(color: AppColors.muted),
               ),
             ),
-            const Icon(Icons.chevron_right, color: AppColors.muted, size: 20),
+            const Icon(Icons.chevron_right_rounded, color: AppColors.muted, size: 20),
           ],
         ),
       ),

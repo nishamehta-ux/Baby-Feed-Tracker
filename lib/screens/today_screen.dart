@@ -184,7 +184,7 @@ class _TodayScreenState extends State<TodayScreen> {
             ),
           ),
           const SizedBox(width: 8),
-          const Icon(Icons.edit_outlined, color: Colors.white70, size: 20),
+          const Icon(Icons.edit_rounded, color: Colors.white70, size: 20),
         ],
       ),
     );
@@ -215,7 +215,10 @@ class _TodayScreenState extends State<TodayScreen> {
                   children: [
                     Text(
                       title,
-                      style: Theme.of(context).textTheme.titleLarge?.copyWith(fontSize: 24),
+                      style: Theme.of(context)
+                          .textTheme
+                          .titleLarge
+                          ?.copyWith(fontSize: AppText.headline),
                     ),
                     const SizedBox(height: 2),
                     InkWell(
@@ -235,7 +238,7 @@ class _TodayScreenState extends State<TodayScreen> {
                             ),
                           ),
                           const SizedBox(width: 4),
-                          const Icon(Icons.calendar_month_outlined,
+                          const Icon(Icons.calendar_month_rounded,
                               size: 18, color: AppColors.muted),
                         ],
                       ),
@@ -244,13 +247,13 @@ class _TodayScreenState extends State<TodayScreen> {
                 ),
               ),
               RoundIconButton(
-                icon: Icons.chevron_left,
+                icon: Icons.chevron_left_rounded,
                 tooltip: 'Previous day',
                 onPressed: () => _shift(-1),
               ),
               const SizedBox(width: 4),
               RoundIconButton(
-                icon: Icons.chevron_right,
+                icon: Icons.chevron_right_rounded,
                 tooltip: 'Next day',
                 onPressed: isToday ? null : () => _shift(1),
               ),
@@ -274,35 +277,45 @@ class _TodayScreenState extends State<TodayScreen> {
           ],
           if (entries.isNotEmpty) ...[
             const SizedBox(height: 16),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: [
-                if (totals.breastCount > 0)
-                  _SummaryChip(
-                    type: EntryType.breast,
-                    value: formatDuration(totals.breast),
-                    label: 'breastfeeding',
-                  ),
-                if (totals.anyBottleCount > 0)
-                  _SummaryChip(
-                    type: EntryType.bottle,
-                    value: '${totals.totalMl} ml',
-                    label: 'bottle',
-                  ),
-                if (totals.pumpCount > 0)
-                  _SummaryChip(
-                    type: EntryType.pump,
-                    value: '${totals.pumpMl} ml',
-                    label: 'pumped',
-                  ),
-                if (totals.diaperCount > 0)
-                  _SummaryChip(
-                    type: EntryType.diaper,
-                    value: '${totals.diaperCount}',
-                    label: totals.diaperCount == 1 ? 'diaper' : 'diapers',
-                  ),
-              ],
+            // Two chips per row, so the day's totals take two lines at most.
+            LayoutBuilder(
+              builder: (context, constraints) {
+                final half = (constraints.maxWidth - 8) / 2;
+                return Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: [
+                    if (totals.breastCount > 0)
+                      _SummaryChip(
+                        width: half,
+                        type: EntryType.breast,
+                        value: formatDuration(totals.breast),
+                        label: 'breastfed',
+                      ),
+                    if (totals.anyBottleCount > 0)
+                      _SummaryChip(
+                        width: half,
+                        type: EntryType.bottle,
+                        value: '${totals.totalMl} ml',
+                        label: 'bottle',
+                      ),
+                    if (totals.pumpCount > 0)
+                      _SummaryChip(
+                        width: half,
+                        type: EntryType.pump,
+                        value: '${totals.pumpMl} ml',
+                        label: 'pumped',
+                      ),
+                    if (totals.diaperCount > 0)
+                      _SummaryChip(
+                        width: half,
+                        type: EntryType.diaper,
+                        value: '${totals.diaperCount}',
+                        label: totals.diaperCount == 1 ? 'diaper' : 'diapers',
+                      ),
+                  ],
+                );
+              },
             ),
           ],
           const SizedBox(height: 20),
@@ -339,7 +352,7 @@ class _TodayScreenState extends State<TodayScreen> {
                   alignment: Alignment.centerRight,
                   padding: const EdgeInsets.only(right: 16),
                   color: AppColors.danger,
-                  child: const Icon(Icons.delete_outline, color: Colors.white),
+                  child: const Icon(Icons.delete_outline_rounded, color: Colors.white),
                 ),
                 onDismissed: (_) => _delete(e),
                 child: _TimelineTile(entry: e, onTap: () => _openEditor(e)),
@@ -347,7 +360,7 @@ class _TodayScreenState extends State<TodayScreen> {
             const SizedBox(height: 8),
             const Text(
               'Tap to edit · swipe left to delete',
-              style: TextStyle(fontSize: 12, color: AppColors.muted),
+              style: TextStyle(fontSize: AppText.label, color: AppColors.muted),
             ),
           ],
         ],
@@ -358,8 +371,14 @@ class _TodayScreenState extends State<TodayScreen> {
 
 /// A day total in the summary row: the kind's icon, a value and a word.
 class _SummaryChip extends StatelessWidget {
-  const _SummaryChip({required this.type, required this.value, required this.label});
+  const _SummaryChip({
+    required this.width,
+    required this.type,
+    required this.value,
+    required this.label,
+  });
 
+  final double width;
   final EntryType type;
   final String value;
   final String label;
@@ -367,7 +386,8 @@ class _SummaryChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.fromLTRB(4, 4, 12, 4),
+      width: width,
+      padding: const EdgeInsets.fromLTRB(4, 4, 10, 4),
       decoration: BoxDecoration(
         color: AppColors.field,
         borderRadius: BorderRadius.circular(20),
@@ -375,16 +395,22 @@ class _SummaryChip extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          EntryIcon(type: type, size: 26),
+          EntryIcon(type: type, size: EntryIcon.small),
           const SizedBox(width: 8),
-          Text.rich(
-            TextSpan(
-              children: [
-                TextSpan(text: value, style: const TextStyle(fontWeight: FontWeight.w700)),
-                TextSpan(text: ' $label', style: const TextStyle(color: AppColors.muted)),
-              ],
+          Flexible(
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              alignment: Alignment.centerLeft,
+              child: Text.rich(
+                TextSpan(
+                  children: [
+                    TextSpan(text: value, style: const TextStyle(fontWeight: FontWeight.w700)),
+                    TextSpan(text: ' $label', style: const TextStyle(color: AppColors.muted)),
+                  ],
+                ),
+                style: const TextStyle(fontSize: AppText.body, color: AppColors.ink),
+              ),
             ),
-            style: const TextStyle(fontSize: 14, color: AppColors.ink),
           ),
         ],
       ),
@@ -430,7 +456,7 @@ class _TimelineTile extends StatelessWidget {
                       Text(
                         hm.format(e.end),
                         style: const TextStyle(
-                          fontSize: 12,
+                          fontSize: AppText.label,
                           color: AppColors.muted,
                           fontFeatures: [FontFeature.tabularFigures()],
                         ),
@@ -450,7 +476,7 @@ class _TimelineTile extends StatelessWidget {
                   ),
                   Padding(
                     padding: const EdgeInsets.only(top: 8),
-                    child: EntryIcon(type: e.type, icon: iconForEntry(e), size: 32),
+                    child: EntryIcon(type: e.type, icon: iconForEntry(e), size: EntryIcon.medium),
                   ),
                 ],
               ),
@@ -470,7 +496,8 @@ class _TimelineTile extends StatelessWidget {
                         padding: const EdgeInsets.only(top: 2),
                         child: Text(
                           e.notes,
-                          style: const TextStyle(fontStyle: FontStyle.italic, fontSize: 13),
+                          style:
+                              const TextStyle(fontStyle: FontStyle.italic, fontSize: AppText.label),
                         ),
                       ),
                   ],

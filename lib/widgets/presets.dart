@@ -5,13 +5,13 @@ import 'common.dart';
 
 /// Routines offered in the Routine drawer. Anything else can be typed.
 const routinePresets = <(String, IconData)>[
-  ('Bath', Icons.bathtub_outlined),
+  ('Bath', Icons.bathtub_rounded),
   ('Nail trim', Icons.content_cut_rounded),
-  ('Play time', Icons.toys_outlined),
-  ('Story time', Icons.menu_book_outlined),
-  ('Tummy time', Icons.child_care_outlined),
-  ('Vitamin or probiotic', Icons.medication_outlined),
-  ('Walk or outdoor time', Icons.park_outlined),
+  ('Play time', Icons.toys_rounded),
+  ('Story time', Icons.menu_book_rounded),
+  ('Tummy time', Icons.child_care_rounded),
+  ('Vitamin or probiotic', Icons.medication_rounded),
+  ('Walk or outdoor time', Icons.park_rounded),
 ];
 
 /// One kind of thing the Other drawer can log.
@@ -36,7 +36,7 @@ class OtherPreset {
 const otherPresets = <OtherPreset>[
   OtherPreset(
       name: 'Weight',
-      icon: Icons.monitor_weight_outlined,
+      icon: Icons.monitor_weight_rounded,
       valueLabel: 'Weight',
       unit: 'kg',
       numeric: true),
@@ -44,7 +44,7 @@ const otherPresets = <OtherPreset>[
       name: 'Height', icon: Icons.height_rounded, valueLabel: 'Height', unit: 'cm', numeric: true),
   OtherPreset(
       name: 'Head size',
-      icon: Icons.face_outlined,
+      icon: Icons.face_rounded,
       valueLabel: 'Around the head',
       unit: 'cm',
       numeric: true),
@@ -56,10 +56,10 @@ const otherPresets = <OtherPreset>[
       numeric: true),
   OtherPreset(
       name: 'Medicine',
-      icon: Icons.medication_liquid_outlined,
+      icon: Icons.medication_liquid_rounded,
       valueLabel: 'Which medicine and dose'),
-  OtherPreset(name: 'Vaccine', icon: Icons.vaccines_outlined, valueLabel: 'Which vaccine'),
-  OtherPreset(name: 'Baby first', icon: Icons.star_outline_rounded, valueLabel: 'What happened'),
+  OtherPreset(name: 'Vaccine', icon: Icons.vaccines_rounded, valueLabel: 'Which vaccine'),
+  OtherPreset(name: 'Baby first', icon: Icons.star_rounded, valueLabel: 'What happened'),
 ];
 
 /// The preset an Other entry was made from, if its name matches one.

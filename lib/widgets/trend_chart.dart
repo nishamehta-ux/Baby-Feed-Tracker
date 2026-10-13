@@ -68,7 +68,8 @@ class _TrendChartState extends State<TrendChart> {
                   children: [
                     TextSpan(
                       text: widget.format(shown.value),
-                      style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w800),
+                      style:
+                          const TextStyle(fontSize: AppText.subtitle, fontWeight: FontWeight.w800),
                     ),
                     TextSpan(
                       text: '  ${DateFormat('EEE d MMM yyyy').format(shown.at)}',
@@ -150,7 +151,8 @@ class _ChartPainter extends CustomPainter {
   }
 
   TextPainter _text(String s, {Color c = AppColors.muted, FontWeight? w}) => TextPainter(
-        text: TextSpan(text: s, style: TextStyle(fontSize: 11, color: c, fontWeight: w)),
+        text:
+            TextSpan(text: s, style: TextStyle(fontSize: AppText.caption, color: c, fontWeight: w)),
         textDirection: TextDirection.ltr,
       )..layout();
 

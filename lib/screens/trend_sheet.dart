@@ -43,15 +43,17 @@ Future<void> showTrendSheet(
                     IconButton(
                       onPressed: () => Navigator.pop(context),
                       tooltip: 'Close',
-                      icon: Icon(Icons.close, color: onHeader),
+                      icon: Icon(Icons.close_rounded, color: onHeader),
                     ),
                     Expanded(
                       child: Text(
                         title,
                         textAlign: TextAlign.center,
                         overflow: TextOverflow.ellipsis,
-                        style:
-                            TextStyle(color: onHeader, fontSize: 22, fontWeight: FontWeight.w800),
+                        style: TextStyle(
+                            color: onHeader,
+                            fontSize: AppText.headline,
+                            fontWeight: FontWeight.w800),
                       ),
                     ),
                     const SizedBox(width: 32),
@@ -64,7 +66,7 @@ Future<void> showTrendSheet(
                   children: [
                     Row(
                       children: [
-                        EntryIcon(type: type, icon: icon, size: 36),
+                        EntryIcon(type: type, icon: icon, size: EntryIcon.medium),
                         const SizedBox(width: 12),
                         Expanded(
                           child: Text(subtitle, style: const TextStyle(color: AppColors.muted)),
@@ -81,13 +83,15 @@ Future<void> showTrendSheet(
                     const SizedBox(height: 4),
                     const Text(
                       'Tap the chart to read a point.',
-                      style: TextStyle(color: AppColors.muted, fontSize: 12),
+                      style: TextStyle(color: AppColors.muted, fontSize: AppText.label),
                     ),
                     const SizedBox(height: 24),
                     const Text(
                       'All values',
                       style: TextStyle(
-                          fontSize: 17, fontWeight: FontWeight.w800, color: AppColors.ink),
+                          fontSize: AppText.subtitle,
+                          fontWeight: FontWeight.w800,
+                          color: AppColors.ink),
                     ),
                     const SizedBox(height: 4),
                     for (final p in points.reversed)

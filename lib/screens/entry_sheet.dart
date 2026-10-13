@@ -31,7 +31,8 @@ Future<void> showAddMenu(BuildContext context, EntryStore store) async {
               padding: EdgeInsets.fromLTRB(16, 12, 16, 4),
               child: Text(
                 'What do you want to log?',
-                style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800, color: AppColors.ink),
+                style: TextStyle(
+                    fontSize: AppText.title, fontWeight: FontWeight.w800, color: AppColors.ink),
               ),
             ),
             _MenuOption(type: EntryType.breast, title: 'Breastfeeding', subtitle: 'Time each side'),
@@ -576,14 +577,16 @@ class _EntrySheetState extends State<EntrySheet> {
                     IconButton(
                       onPressed: _close,
                       tooltip: 'Close',
-                      icon: Icon(Icons.close, color: onHeader),
+                      icon: Icon(Icons.close_rounded, color: onHeader),
                     ),
                     Expanded(
                       child: Text(
                         _isEditing ? 'Edit ${_sheetTitle.toLowerCase()}' : _sheetTitle,
                         textAlign: TextAlign.center,
-                        style:
-                            TextStyle(color: onHeader, fontSize: 22, fontWeight: FontWeight.w800),
+                        style: TextStyle(
+                            color: onHeader,
+                            fontSize: AppText.headline,
+                            fontWeight: FontWeight.w800),
                       ),
                     ),
                     TextButton(
@@ -591,7 +594,7 @@ class _EntrySheetState extends State<EntrySheet> {
                       style: TextButton.styleFrom(foregroundColor: onHeader),
                       child: const Text(
                         'Save',
-                        style: TextStyle(fontSize: 17, fontWeight: FontWeight.w800),
+                        style: TextStyle(fontSize: AppText.subtitle, fontWeight: FontWeight.w800),
                       ),
                     ),
                   ],
@@ -604,7 +607,7 @@ class _EntrySheetState extends State<EntrySheet> {
                   padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
                   child: Row(
                     children: [
-                      const Icon(Icons.info_outline, color: AppColors.ink, size: 20),
+                      const Icon(Icons.info_outline_rounded, color: AppColors.ink, size: 20),
                       const SizedBox(width: 8),
                       Expanded(
                         child: Text(
@@ -636,7 +639,7 @@ class _EntrySheetState extends State<EntrySheet> {
                           child: Center(
                             child: TextButton.icon(
                               onPressed: _delete,
-                              icon: const Icon(Icons.delete_outline),
+                              icon: const Icon(Icons.delete_outline_rounded),
                               label: const Text('Delete entry'),
                               style: TextButton.styleFrom(foregroundColor: AppColors.danger),
                             ),
@@ -751,7 +754,7 @@ class _EntrySheetState extends State<EntrySheet> {
               Expanded(
                 child: Text(
                   'Use last amount: $last ml?',
-                  style: const TextStyle(fontSize: 15, color: AppColors.ink),
+                  style: const TextStyle(fontSize: AppText.body, color: AppColors.ink),
                 ),
               ),
               OutlinedButton(
@@ -821,7 +824,8 @@ class _EntrySheetState extends State<EntrySheet> {
           child: Text(
             'Total ${_leftMl + _rightMl} ml',
             textAlign: TextAlign.right,
-            style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w800, color: AppColors.ink),
+            style: const TextStyle(
+                fontSize: AppText.subtitle, fontWeight: FontWeight.w800, color: AppColors.ink),
           ),
         ),
       ] else
@@ -892,7 +896,7 @@ class _EntrySheetState extends State<EntrySheet> {
             ),
           _Pill(
             label: 'Something else',
-            icon: Icons.add,
+            icon: Icons.add_rounded,
             selected: _customTitle,
             onTap: () => setState(() {
               _error = null;
@@ -935,7 +939,7 @@ class _EntrySheetState extends State<EntrySheet> {
             ),
           _Pill(
             label: 'Something else',
-            icon: Icons.add,
+            icon: Icons.add_rounded,
             selected: _customTitle,
             onTap: () => setState(() {
               _error = null;
@@ -997,13 +1001,14 @@ class _MenuOption extends StatelessWidget {
   Widget build(BuildContext context) {
     return ListTile(
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
-      leading: EntryIcon(type: type, size: 44),
+      leading: EntryIcon(type: type, size: EntryIcon.large),
       title: Text(
         title,
-        style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: AppColors.ink),
+        style: const TextStyle(
+            fontSize: AppText.subtitle, fontWeight: FontWeight.w800, color: AppColors.ink),
       ),
       subtitle: Text(subtitle, style: const TextStyle(color: AppColors.muted)),
-      trailing: const Icon(Icons.chevron_right, color: AppColors.muted),
+      trailing: const Icon(Icons.chevron_right_rounded, color: AppColors.muted, size: 20),
       onTap: () => Navigator.pop(context, type),
     );
   }
@@ -1030,7 +1035,7 @@ class _FormRow extends StatelessWidget {
               child: Text(
                 label,
                 style: const TextStyle(
-                    fontSize: 18, fontWeight: FontWeight.w700, color: AppColors.ink),
+                    fontSize: AppText.subtitle, fontWeight: FontWeight.w700, color: AppColors.ink),
               ),
             ),
             trailing,
@@ -1052,7 +1057,7 @@ class _RowValue extends StatelessWidget {
     return Text(
       text,
       style: TextStyle(
-        fontSize: 17,
+        fontSize: AppText.subtitle,
         fontWeight: FontWeight.w600,
         color: muted ? AppColors.muted : AppColors.ink,
       ),
@@ -1091,8 +1096,8 @@ class _TextRow extends StatelessWidget {
             flex: 5,
             child: Text(
               label,
-              style:
-                  const TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: AppColors.ink),
+              style: const TextStyle(
+                  fontSize: AppText.subtitle, fontWeight: FontWeight.w700, color: AppColors.ink),
             ),
           ),
           const SizedBox(width: 12),
@@ -1105,8 +1110,8 @@ class _TextRow extends StatelessWidget {
               textAlign: TextAlign.right,
               keyboardType: numeric ? const TextInputType.numberWithOptions(decimal: true) : null,
               textCapitalization: TextCapitalization.sentences,
-              style:
-                  const TextStyle(fontSize: 17, fontWeight: FontWeight.w700, color: AppColors.ink),
+              style: const TextStyle(
+                  fontSize: AppText.subtitle, fontWeight: FontWeight.w700, color: AppColors.ink),
               decoration: InputDecoration(
                 hintText: hint,
                 hintStyle: const TextStyle(color: AppColors.muted, fontWeight: FontWeight.w400),
@@ -1117,7 +1122,7 @@ class _TextRow extends StatelessWidget {
           ),
           if (suffix != null && suffix!.isNotEmpty) ...[
             const SizedBox(width: 6),
-            Text(suffix!, style: const TextStyle(fontSize: 17, color: AppColors.ink)),
+            Text(suffix!, style: const TextStyle(fontSize: AppText.subtitle, color: AppColors.ink)),
           ],
         ],
       ),
@@ -1147,10 +1152,11 @@ class _NotesRow extends StatelessWidget {
         minLines: 1,
         maxLines: 4,
         textCapitalization: TextCapitalization.sentences,
-        style: const TextStyle(fontSize: 17, color: AppColors.ink),
+        style: const TextStyle(fontSize: AppText.subtitle, color: AppColors.ink),
         decoration: const InputDecoration(
           hintText: 'Notes',
-          hintStyle: TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: AppColors.muted),
+          hintStyle: TextStyle(
+              fontSize: AppText.subtitle, fontWeight: FontWeight.w700, color: AppColors.muted),
           border: InputBorder.none,
           contentPadding: EdgeInsets.symmetric(vertical: 18),
         ),
@@ -1199,7 +1205,7 @@ class _TimerBlock extends StatelessWidget {
                   child: Text(
                     tag!,
                     style: const TextStyle(
-                        fontSize: 13, fontWeight: FontWeight.w700, color: AppColors.ink),
+                        fontSize: AppText.label, fontWeight: FontWeight.w700, color: AppColors.ink),
                   ),
                 ),
         ),
@@ -1212,7 +1218,7 @@ class _TimerBlock extends StatelessWidget {
               Text(
                 formatClock(elapsed),
                 style: const TextStyle(
-                  fontSize: 36,
+                  fontSize: AppText.timer,
                   fontWeight: FontWeight.w300,
                   color: AppColors.ink,
                   fontFeatures: [FontFeature.tabularFigures()],
@@ -1221,7 +1227,7 @@ class _TimerBlock extends StatelessWidget {
               IconButton(
                 onPressed: onEdit,
                 tooltip: name == 'timer' ? 'Enter the time' : 'Enter $name time',
-                icon: const Icon(Icons.edit_outlined, color: AppColors.ink, size: 20),
+                icon: const Icon(Icons.edit_rounded, color: AppColors.ink, size: 20),
               ),
             ],
           ),
@@ -1230,10 +1236,15 @@ class _TimerBlock extends StatelessWidget {
         running
             ? FilledButton.icon(
                 onPressed: onToggle,
-                icon: const Icon(Icons.pause),
+                icon: const Icon(Icons.pause_rounded),
                 label: Text(action),
                 style: FilledButton.styleFrom(
-                    minimumSize: const Size(120, 48), shape: const StadiumBorder()),
+                  minimumSize: const Size(120, 48),
+                  shape: const StadiumBorder(),
+                  // Running is a state, not the drawer's main action (Save).
+                  backgroundColor: AppColors.selected,
+                  foregroundColor: AppColors.onSelected,
+                ),
               )
             : OutlinedButton(
                 onPressed: onToggle,
@@ -1244,7 +1255,7 @@ class _TimerBlock extends StatelessWidget {
                   foregroundColor: AppColors.ink,
                   side: const BorderSide(color: AppColors.ink, width: 1.5),
                   textStyle: const TextStyle(
-                      fontFamily: 'Heros', fontSize: 16, fontWeight: FontWeight.w700),
+                      fontFamily: 'Heros', fontSize: AppText.subtitle, fontWeight: FontWeight.w700),
                 ),
                 child: Text(action),
               ),
@@ -1307,7 +1318,7 @@ class _ChoiceCircle extends StatelessWidget {
             label,
             textAlign: TextAlign.center,
             style: TextStyle(
-              fontSize: 17,
+              fontSize: AppText.subtitle,
               height: 1.15,
               fontWeight: selected ? FontWeight.w800 : FontWeight.w600,
               color: AppColors.ink,
@@ -1336,7 +1347,8 @@ class _ChoiceGrid extends StatelessWidget {
         children: [
           Text(
             label,
-            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: AppColors.ink),
+            style: const TextStyle(
+                fontSize: AppText.subtitle, fontWeight: FontWeight.w700, color: AppColors.ink),
           ),
           const SizedBox(height: 12),
           Wrap(spacing: 8, runSpacing: 8, children: children),
@@ -1356,11 +1368,11 @@ class _Pill extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final fg = selected ? Colors.white : AppColors.ink;
+    final fg = selected ? AppColors.onSelected : AppColors.ink;
     return Material(
-      color: selected ? AppColors.indigo : Colors.white,
+      color: selected ? AppColors.selected : Colors.white,
       shape: StadiumBorder(
-        side: BorderSide(color: selected ? AppColors.indigo : AppColors.ink, width: 1.25),
+        side: BorderSide(color: selected ? AppColors.selected : AppColors.ink, width: 1.25),
       ),
       child: InkWell(
         customBorder: const StadiumBorder(),
@@ -1378,7 +1390,7 @@ class _Pill extends StatelessWidget {
                 child: Text(
                   label,
                   overflow: TextOverflow.ellipsis,
-                  style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: fg),
+                  style: TextStyle(fontSize: AppText.body, fontWeight: FontWeight.w700, color: fg),
                 ),
               ),
             ],
@@ -1409,7 +1421,7 @@ class _MlStepper extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       children: [
         _StepButton(
-          icon: Icons.remove,
+          icon: Icons.remove_rounded,
           tooltip: 'Less',
           onTap: value > 0 ? () => onChanged((value - step).clamp(0, 500)) : null,
         ),
@@ -1422,13 +1434,15 @@ class _MlStepper extends StatelessWidget {
             alignment: Alignment.center,
             child: Text(
               '$value ml',
-              style:
-                  const TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: AppColors.ink),
+              style: const TextStyle(
+                  fontSize: AppText.subtitle, fontWeight: FontWeight.w800, color: AppColors.ink),
             ),
           ),
         ),
         _StepButton(
-            icon: Icons.add, tooltip: 'More', onTap: () => onChanged((value + step).clamp(0, 500))),
+            icon: Icons.add_rounded,
+            tooltip: 'More',
+            onTap: () => onChanged((value + step).clamp(0, 500))),
       ],
     );
   }
