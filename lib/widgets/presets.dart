@@ -5,6 +5,7 @@ import 'common.dart';
 
 /// Routines offered in the Routine drawer. Anything else can be typed.
 const routinePresets = <(String, IconData)>[
+  ('Sleep', Icons.bedtime_rounded),
   ('Bath', Icons.bathtub_rounded),
   ('Nail trim', Icons.content_cut_rounded),
   ('Play time', Icons.toys_rounded),

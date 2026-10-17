@@ -224,9 +224,55 @@ class _TrendsScreenState extends State<TrendsScreen> {
       );
     }
 
-    // Routines are counted per period: they are too sparse for daily averages.
+    // Timed routines (sleep, naps) are about how long: the average time a
+    // day, counted like the other averages (finished days only).
+    Widget timedRoutineRow(String name, IconData? icon) {
+      double minutesPerDay(int i) {
+        final s = starts[i];
+        var list = entriesBetween(widget.store.entries, s, _plus(s, 1))
+            .where((e) => e.type == EntryType.routine && e.title == name);
+        if (isCurrent && i == starts.length - 1 && elapsed > 1) {
+          list = list.where((e) => !isSameDay(e.start, _today));
+        }
+        final total = list.fold(Duration.zero, (sum, e) => sum + e.duration);
+        return total.inMinutes / history[i].days;
+      }
+
+      String perDay(double v) => '${formatDuration(Duration(minutes: v.round()))} a day';
+      final values = [for (var i = 0; i < starts.length; i++) minutesPerDay(i)];
+      final first = values.indexWhere((v) => v > 0);
+      return _TrendRow(
+        type: EntryType.routine,
+        icon: icon,
+        name: name,
+        value: perDay(values.last),
+        detail: values[values.length - 2] <= 0 && values.last <= 0
+            ? 'Nothing logged last $_unit'
+            : _change(values.last, values[values.length - 2]),
+        trend: [for (var i = 0; i < values.length; i++) first < 0 || i < first ? null : values[i]],
+        onTap: first < 0
+            ? null
+            : () => showTrendSheet(
+                  context,
+                  title: name,
+                  subtitle: 'Average time a day for each of the last $_span ${_unit}s',
+                  type: EntryType.routine,
+                  icon: icon,
+                  points: [
+                    for (var i = first; i < starts.length; i++) TrendPoint(starts[i], values[i]),
+                  ],
+                  format: perDay,
+                  rowLabel: (p) => _periodLabel(p.at),
+                ),
+      );
+    }
+
+    // Other routines are counted per period: too sparse for daily averages.
     Widget routineRow(String name) {
       final icon = routinePresets.where((r) => r.$1 == name).map((r) => r.$2).firstOrNull;
+      final timed = widget.store.entries
+          .any((e) => e.type == EntryType.routine && e.title == name && e.duration > Duration.zero);
+      if (timed) return timedRoutineRow(name, icon);
       int countIn(DateTime s) => entriesBetween(widget.store.entries, s, _plus(s, 1))
           .where((e) => e.type == EntryType.routine && e.title == name)
           .length;
@@ -377,7 +423,9 @@ class _TrendsScreenState extends State<TrendsScreen> {
             const SizedBox(height: 24),
             Text('Routines', style: Theme.of(context).textTheme.titleMedium),
             Text(
-              isCurrent ? 'Times this $_unit so far, against last $_unit.' : 'Times that $_unit.',
+              isCurrent
+                  ? 'Times this $_unit so far, or for timed ones like sleep, time a day.'
+                  : 'Times that $_unit, or for timed ones, time a day.',
               style: TextStyle(color: AppColors.muted, fontSize: AppText.label),
             ),
             const SizedBox(height: 8),
@@ -541,27 +589,62 @@ List<Widget> _totalItems(Totals t) => [
       if (t.diaperCount > 0) _TotalItem(EntryType.diaper, '${t.diaperCount}'),
     ];
 
+/// Routines and Other for a day, grouped by name: total time for timed
+/// ones (e.g. "Sleep 9h 30m"), a count for repeats, the latest reading for
+/// measurements.
+List<Widget> _extraItems(Totals t) {
+  final groups = <String, List<Entry>>{};
+  for (final e in [...t.routines, ...t.others]) {
+    groups.putIfAbsent('${e.type.name}:${entryTitle(e)}', () => []).add(e);
+  }
+  return [
+    for (final list in groups.values)
+      _TotalItem(
+        list.first.type,
+        () {
+          final last = list.last;
+          final total = list.fold(Duration.zero, (sum, e) => sum + e.duration);
+          if (last.type == EntryType.other && last.valueWithUnit.isNotEmpty) {
+            return '${entryTitle(last)} ${last.valueWithUnit}';
+          }
+          if (total > Duration.zero) return '${entryTitle(last)} ${_compact(total)}';
+          return list.length > 1 ? '${entryTitle(last)} ×${list.length}' : entryTitle(last);
+        }(),
+        icon: iconForEntry(list.first),
+        strong: false,
+      ),
+  ];
+}
+
 class _TotalItem extends StatelessWidget {
-  const _TotalItem(this.type, this.text);
+  const _TotalItem(this.type, this.text, {this.icon, this.strong = true});
 
   final EntryType type;
   final String text;
+  final IconData? icon;
+
+  /// Day totals are strong; routines and Other are quieter.
+  final bool strong;
 
   @override
   Widget build(BuildContext context) {
+    final label = Text(
+      text,
+      overflow: TextOverflow.ellipsis,
+      style: TextStyle(
+        fontSize: AppText.label,
+        fontWeight: strong ? FontWeight.w600 : FontWeight.w400,
+        color: strong ? AppColors.ink : AppColors.muted,
+        fontFeatures: const [FontFeature.tabularFigures()],
+      ),
+    );
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Icon(iconForType(type), size: 16, color: AppColors.lineForType(type)),
+        Icon(icon ?? iconForType(type), size: 16, color: AppColors.lineForType(type)),
         const SizedBox(width: 4),
-        Text(
-          text,
-          style: const TextStyle(
-            fontSize: AppText.label,
-            fontWeight: FontWeight.w600,
-            fontFeatures: [FontFeature.tabularFigures()],
-          ),
-        ),
+        // Day totals sit in a scaled row; the quieter items wrap and may truncate.
+        strong ? label : Flexible(child: label),
       ],
     );
   }
@@ -584,6 +667,7 @@ class _DayRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final items = _totalItems(totals);
+    final extras = _extraItems(totals);
     return InkWell(
       onTap: onTap,
       child: Container(
@@ -610,12 +694,16 @@ class _DayRow extends StatelessWidget {
               ),
             ),
             Expanded(
-              child: items.isEmpty
-                  ? Text(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  if (items.isEmpty && extras.isEmpty)
+                    Text(
                       'Nothing logged',
                       style: TextStyle(fontSize: AppText.label, color: AppColors.muted),
                     )
-                  : FittedBox(
+                  else if (items.isNotEmpty)
+                    FittedBox(
                       fit: BoxFit.scaleDown,
                       alignment: Alignment.centerLeft,
                       child: Row(
@@ -627,6 +715,13 @@ class _DayRow extends StatelessWidget {
                         ],
                       ),
                     ),
+                  // Routines and Other, quieter, on their own line.
+                  if (extras.isNotEmpty) ...[
+                    if (items.isNotEmpty) const SizedBox(height: 6),
+                    Wrap(spacing: 12, runSpacing: 4, children: extras),
+                  ],
+                ],
+              ),
             ),
             Icon(Icons.chevron_right_rounded, color: AppColors.muted, size: 20),
           ],

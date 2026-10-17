@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 
 import '../data/entry_store.dart';
@@ -133,9 +134,11 @@ class _EntrySheetState extends State<EntrySheet> {
   // Bottle.
   int _amountMl = 0;
 
-  // Pumping: one timer, amount per side or in total.
-  Duration _pumpTime = Duration.zero;
-  DateTime? _pumpSince;
+  // One timer for pumping, routines and Other (which may also have no
+  // duration at all); pumping also has an amount per side or in total.
+  Duration _timerTime = Duration.zero;
+  DateTime? _timerSince;
+  bool _saving = false;
   bool _pumpPerSide = false;
   int _leftMl = 0;
   int _rightMl = 0;
@@ -186,7 +189,7 @@ class _EntrySheetState extends State<EntrySheet> {
       case EntryType.bottle || EntryType.breastMilk:
         _amountMl = e.amountMl;
       case EntryType.pump:
-        _pumpTime = e.duration;
+        _timerTime = e.duration;
         _pumpPerSide = e.leftMl + e.rightMl > 0;
         _leftMl = e.leftMl;
         _rightMl = e.rightMl;
@@ -197,10 +200,12 @@ class _EntrySheetState extends State<EntrySheet> {
         _dry = e.diaper == DiaperKind.dry;
         _rash = e.rash;
       case EntryType.routine:
+        _timerTime = e.duration;
         _title = e.title;
         _customTitle = !routinePresets.any((p) => p.$1 == e.title);
         _titleText.text = _customTitle ? e.title : '';
       case EntryType.other:
+        _timerTime = e.duration;
         _title = e.title;
         _customTitle = otherPresetFor(e.title) == null;
         _titleText.text = _customTitle ? e.title : '';
@@ -286,89 +291,177 @@ class _EntrySheetState extends State<EntrySheet> {
     });
   }
 
-  // ---- Pumping timer -------------------------------------------------------
+  // ---- Single timer (pumping, routines, Other) ------------------------------
 
-  Duration get _pumpElapsed =>
-      _pumpTime + (_pumpSince == null ? Duration.zero : DateTime.now().difference(_pumpSince!));
+  Duration get _timerElapsed =>
+      _timerTime + (_timerSince == null ? Duration.zero : DateTime.now().difference(_timerSince!));
 
-  void _togglePump() {
+  void _toggleTimer() {
     setState(() {
       _error = null;
-      if (_pumpSince == null) {
-        if (_pumpTime == Duration.zero && !_startEdited) _start = DateTime.now();
-        _pumpSince = DateTime.now();
+      if (_timerSince == null) {
+        if (_timerTime == Duration.zero && !_startEdited) _start = DateTime.now();
+        _timerSince = DateTime.now();
       } else {
-        _pumpTime = _pumpElapsed;
-        _pumpSince = null;
+        _timerTime = _timerElapsed;
+        _timerSince = null;
       }
-      _tick(_pumpSince != null);
+      _tick(_timerSince != null);
     });
   }
 
-  Future<void> _editPumpTime() async {
-    if (_pumpSince != null) _togglePump();
-    final picked = await _pickDuration('Pumping time', _pumpTime);
-    if (picked != null) setState(() => _pumpTime = picked);
+  Future<void> _editTimer() async {
+    if (_timerSince != null) _toggleTimer();
+    final picked =
+        await _pickDuration(_type == EntryType.pump ? 'Pumping time' : 'How long', _timerTime);
+    if (picked != null) setState(() => _timerTime = picked);
+  }
+
+  /// Sets the duration from an end time picked for routines and Other.
+  Future<void> _pickEnd() async {
+    if (_timerSince != null) _toggleTimer();
+    final end = await _pickDateTime(
+      'End time',
+      _timerTime > Duration.zero ? _start.add(_timerTime) : DateTime.now(),
+      notBefore: _start,
+    );
+    if (end == null || !mounted) return;
+    setState(() => _timerTime = end.isAfter(_start) ? end.difference(_start) : Duration.zero);
   }
 
   int get _pumpTotalMl => _pumpPerSide ? _leftMl + _rightMl : _amountMl;
 
   // ---- Pickers -------------------------------------------------------------
 
-  Future<Duration?> _pickDuration(String title, Duration initial) async {
-    var picked = initial;
-    final ok = await showModalBottomSheet<bool>(
+  /// A duration in hours and minutes, with quick picks for common lengths.
+  Future<Duration?> _pickDuration(String title, Duration initial) {
+    var picked = Duration(minutes: initial.inMinutes);
+    return showModalBottomSheet<Duration>(
       context: context,
-      builder: (context) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const _GrabHandle(),
-            Padding(
-              padding: const EdgeInsets.all(16),
-              child: Text(title, style: Theme.of(context).textTheme.titleMedium),
-            ),
-            SizedBox(
-              height: 200,
-              child: CupertinoTimerPicker(
-                mode: CupertinoTimerPickerMode.hms,
-                initialTimerDuration: initial,
-                onTimerDurationChanged: (d) => picked = d,
+      isScrollControlled: true,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setSheet) => SafeArea(
+          child: SingleChildScrollView(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(20, 0, 20, 16),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const _GrabHandle(),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    child: Text(title, style: Theme.of(context).textTheme.titleMedium),
+                  ),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    alignment: WrapAlignment.center,
+                    children: [
+                      for (final m in const [5, 10, 15, 20, 30, 45, 60])
+                        _Pill(
+                          label: m < 60 ? '$m min' : '1 h',
+                          selected: picked == Duration(minutes: m),
+                          onTap: () => setSheet(() => picked = Duration(minutes: m)),
+                        ),
+                    ],
+                  ),
+                  SizedBox(
+                    height: 180,
+                    child: CupertinoTimerPicker(
+                      key: ValueKey(picked),
+                      mode: CupertinoTimerPickerMode.hm,
+                      initialTimerDuration: picked,
+                      onTimerDurationChanged: (d) => picked = d,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  _PrimaryButton(label: 'Done', onPressed: () => Navigator.pop(context, picked)),
+                ],
               ),
             ),
-            Padding(
-              padding: const EdgeInsets.all(16),
-              child: FilledButton(
-                onPressed: () => Navigator.pop(context, true),
-                child: const Text('Done'),
-              ),
-            ),
-          ],
+          ),
         ),
       ),
     );
-    return ok == true ? picked : null;
+  }
+
+  /// Day and time together in one wheel (the day rarely changes), with a
+  /// shortcut back to now.
+  Future<DateTime?> _pickDateTime(String title, DateTime initial, {DateTime? notBefore}) {
+    final now = DateTime.now();
+    final latest = DateTime(now.year, now.month, now.day, now.hour, now.minute);
+    final earliest = notBefore ?? latest.subtract(const Duration(days: 365 * 3));
+    var picked = initial.isAfter(latest)
+        ? latest
+        : initial.isBefore(earliest)
+            ? earliest
+            : DateTime(initial.year, initial.month, initial.day, initial.hour, initial.minute);
+    return showModalBottomSheet<DateTime>(
+      context: context,
+      isScrollControlled: true,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setSheet) => SafeArea(
+          child: SingleChildScrollView(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(20, 0, 20, 16),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const _GrabHandle(),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: Text(title, style: Theme.of(context).textTheme.titleMedium),
+                        ),
+                        TextButton(
+                          onPressed: () => setSheet(() => picked = latest),
+                          child: const Text('Now'),
+                        ),
+                      ],
+                    ),
+                  ),
+                  SizedBox(
+                    height: 200,
+                    child: CupertinoTheme(
+                      data: CupertinoThemeData(
+                        brightness: AppColors.dark ? Brightness.dark : Brightness.light,
+                        textTheme: CupertinoTextThemeData(
+                          dateTimePickerTextStyle: TextStyle(
+                            fontFamily: 'Heros',
+                            fontSize: 20,
+                            color: AppColors.ink,
+                          ),
+                        ),
+                      ),
+                      child: CupertinoDatePicker(
+                        key: ValueKey(picked == latest),
+                        mode: CupertinoDatePickerMode.dateAndTime,
+                        use24hFormat: true,
+                        initialDateTime: picked,
+                        minimumDate: earliest,
+                        maximumDate: latest,
+                        onDateTimeChanged: (d) => picked = d,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  _PrimaryButton(label: 'Done', onPressed: () => Navigator.pop(context, picked)),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
   }
 
   Future<void> _pickStart() async {
-    final date = await showDatePicker(
-      context: context,
-      initialDate: _start,
-      firstDate: DateTime.now().subtract(const Duration(days: 365 * 3)),
-      lastDate: DateTime.now(),
-    );
-    if (date == null || !mounted) return;
-    final time = await showTimePicker(
-      context: context,
-      initialTime: TimeOfDay.fromDateTime(_start),
-      builder: (context, child) => MediaQuery(
-        data: MediaQuery.of(context).copyWith(alwaysUse24HourFormat: true),
-        child: child!,
-      ),
-    );
-    if (time == null) return;
+    final picked = await _pickDateTime('Start time', _start);
+    if (picked == null || !mounted) return;
     setState(() {
-      _start = DateTime(date.year, date.month, date.day, time.hour, time.minute);
+      _start = picked;
       _startEdited = true;
     });
   }
@@ -380,30 +473,6 @@ class _EntrySheetState extends State<EntrySheet> {
     if (day == today) return 'Today $hm';
     if (day == DateTime(today.year, today.month, today.day - 1)) return 'Yesterday $hm';
     return '${DateFormat('d MMM').format(t)} $hm';
-  }
-
-  Future<int?> _typeMl(String title, int current) async {
-    final controller = TextEditingController(text: current == 0 ? '' : '$current');
-    return showDialog<int>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text(title),
-        content: TextField(
-          controller: controller,
-          autofocus: true,
-          keyboardType: TextInputType.number,
-          decoration: const InputDecoration(suffixText: 'ml'),
-          onSubmitted: (v) => Navigator.pop(context, int.tryParse(v)),
-        ),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
-          TextButton(
-            onPressed: () => Navigator.pop(context, int.tryParse(controller.text)),
-            child: const Text('OK'),
-          ),
-        ],
-      ),
-    );
   }
 
   /// The amount of the last bottle with the same contents, for the shortcut.
@@ -421,11 +490,12 @@ class _EntrySheetState extends State<EntrySheet> {
       switch (_type) {
         EntryType.breast => _breastTotal > Duration.zero,
         EntryType.bottle || EntryType.breastMilk => _amountMl > 0,
-        EntryType.pump => _pumpElapsed > Duration.zero || _pumpTotalMl > 0,
+        EntryType.pump => _timerElapsed > Duration.zero || _pumpTotalMl > 0,
         EntryType.diaper => _wet || _dirty || _dry,
-        EntryType.routine ||
-        EntryType.other =>
-          _title.isNotEmpty || _titleText.text.isNotEmpty || _valueText.text.isNotEmpty,
+        EntryType.routine || EntryType.other => _title.isNotEmpty ||
+            _titleText.text.isNotEmpty ||
+            _valueText.text.isNotEmpty ||
+            _timerElapsed > Duration.zero,
       };
 
   Future<void> _close() async {
@@ -458,7 +528,7 @@ class _EntrySheetState extends State<EntrySheet> {
       case EntryType.bottle || EntryType.breastMilk:
         if (_amountMl <= 0) return 'Add the amount.';
       case EntryType.pump:
-        if (_pumpTotalMl <= 0 && _pumpElapsed == Duration.zero) {
+        if (_pumpTotalMl <= 0 && _timerElapsed == Duration.zero) {
           return 'Add the amount pumped or start the timer.';
         }
       case EntryType.diaper:
@@ -479,14 +549,19 @@ class _EntrySheetState extends State<EntrySheet> {
   String get _finalTitle => _customTitle ? _titleText.text.trim() : _title;
 
   Future<void> _save() async {
+    // One save at a time: a second tap while saving must not close the page
+    // behind the drawer.
+    if (_saving) return;
+    // Close the keyboard first, so the page isn't left scrolled under it.
+    FocusManager.instance.primaryFocus?.unfocus();
     if (_activeSide != null) {
       _commitSide();
       _activeSide = null;
       _activeSince = null;
     }
-    if (_pumpSince != null) {
-      _pumpTime = _pumpElapsed;
-      _pumpSince = null;
+    if (_timerSince != null) {
+      _timerTime = _timerElapsed;
+      _timerSince = null;
     }
     _ticker?.cancel();
 
@@ -503,7 +578,7 @@ class _EntrySheetState extends State<EntrySheet> {
       start: _start,
       end: switch (_type) {
         EntryType.breast => _start.add(_breastTotal),
-        EntryType.pump => _start.add(_pumpTime),
+        EntryType.pump || EntryType.routine || EntryType.other => _start.add(_timerTime),
         _ => _start,
       },
       leftDuration: _isBreast ? _left : Duration.zero,
@@ -531,8 +606,19 @@ class _EntrySheetState extends State<EntrySheet> {
       unit: _type == EntryType.other ? (preset?.unit ?? _unitText.text.trim()) : '',
       notes: _notes.text.trim(),
     );
-    await widget.store.upsert(entry);
-    if (mounted) Navigator.of(context).pop(true);
+    setState(() => _saving = true);
+    try {
+      await widget.store.upsert(entry);
+    } catch (_) {
+      if (mounted) {
+        setState(() {
+          _saving = false;
+          _error = "Couldn't save on this device. Try again.";
+        });
+      }
+      return;
+    }
+    if (mounted && (ModalRoute.of(context)?.isCurrent ?? false)) Navigator.of(context).pop(true);
   }
 
   Future<void> _delete() async {
@@ -588,14 +674,8 @@ class _EntrySheetState extends State<EntrySheet> {
                             fontWeight: FontWeight.w800),
                       ),
                     ),
-                    TextButton(
-                      onPressed: _save,
-                      style: TextButton.styleFrom(foregroundColor: onHeader),
-                      child: const Text(
-                        'Save',
-                        style: TextStyle(fontSize: AppText.subtitle, fontWeight: FontWeight.w800),
-                      ),
-                    ),
+                    // Balances the close button so the title stays centred.
+                    const SizedBox(width: 48),
                   ],
                 ),
               ),
@@ -646,6 +726,19 @@ class _EntrySheetState extends State<EntrySheet> {
                         ),
                     ],
                   ),
+                ),
+              ),
+              // Save sits at the end of the form, within thumb reach.
+              Container(
+                decoration: BoxDecoration(
+                  color: AppColors.surface,
+                  border: Border(top: BorderSide(color: AppColors.divider)),
+                ),
+                padding:
+                    EdgeInsets.fromLTRB(20, 12, 20, 12 + MediaQuery.of(context).padding.bottom),
+                child: _PrimaryButton(
+                  label: _isEditing ? 'Save changes' : 'Save',
+                  onPressed: _saving ? null : _save,
                 ),
               ),
             ],
@@ -738,10 +831,6 @@ class _EntrySheetState extends State<EntrySheet> {
             _error = null;
             _amountMl = v;
           }),
-          onType: () async {
-            final v = await _typeMl('Amount', _amountMl);
-            if (v != null) setState(() => _amountMl = v.clamp(0, 500));
-          },
         ),
       ),
       if (last != null && last > 0 && last != _amountMl)
@@ -783,10 +872,6 @@ class _EntrySheetState extends State<EntrySheet> {
               _error = null;
               set(v);
             }),
-            onType: () async {
-              final v = await _typeMl(label, value);
-              if (v != null) setState(() => set(v.clamp(0, 500)));
-            },
           ),
         );
     return [
@@ -794,10 +879,10 @@ class _EntrySheetState extends State<EntrySheet> {
         padding: const EdgeInsets.fromLTRB(16, 20, 16, 24),
         child: _TimerBlock(
           name: 'timer',
-          elapsed: _pumpElapsed,
-          running: _pumpSince != null,
-          onToggle: _togglePump,
-          onEdit: _editPumpTime,
+          elapsed: _timerElapsed,
+          running: _timerSince != null,
+          onToggle: _toggleTimer,
+          onEdit: _editTimer,
         ),
       ),
       _timeRow('Start time'),
@@ -876,9 +961,34 @@ class _EntrySheetState extends State<EntrySheet> {
     ];
   }
 
+  /// For routines and Other: an optional timer, and the end time it implies.
+  List<Widget> _durationFields() {
+    final duration = _timerElapsed;
+    return [
+      Container(
+        decoration: BoxDecoration(border: Border(top: BorderSide(color: AppColors.divider))),
+        padding: const EdgeInsets.fromLTRB(16, 12, 16, 20),
+        child: _TimerBlock(
+          name: 'timer',
+          elapsed: duration,
+          running: _timerSince != null,
+          onToggle: _toggleTimer,
+          onEdit: _editTimer,
+        ),
+      ),
+      _timeRow('Start time'),
+      _FormRow(
+        label: 'End time',
+        onTap: _pickEnd,
+        trailing: duration == Duration.zero
+            ? const _RowValue('Add', muted: true)
+            : _RowValue('${_dayAndTime(_start.add(duration))} · ${formatDuration(duration)}'),
+      ),
+    ];
+  }
+
   List<Widget> _routineFields() {
     return [
-      _timeRow(),
       _ChoiceGrid(
         label: 'Routine',
         children: [
@@ -913,6 +1023,7 @@ class _EntrySheetState extends State<EntrySheet> {
           autofocus: !_isEditing,
           onChanged: () => setState(() => _error = null),
         ),
+      ..._durationFields(),
     ];
   }
 
@@ -920,7 +1031,6 @@ class _EntrySheetState extends State<EntrySheet> {
     final preset = _preset;
     final chosen = preset != null || _customTitle;
     return [
-      _timeRow(),
       _ChoiceGrid(
         label: 'What are you logging?',
         children: [
@@ -966,6 +1076,7 @@ class _EntrySheetState extends State<EntrySheet> {
           onChanged: () => setState(() => _error = null),
         ),
       if (_customTitle) _TextRow(label: 'Unit', controller: _unitText, hint: 'Optional, e.g. ml'),
+      ..._durationFields(),
     ];
   }
 }
@@ -1400,49 +1511,124 @@ class _Pill extends StatelessWidget {
   }
 }
 
-/// − value + for an amount in ml; tapping the value lets you type it.
-class _MlStepper extends StatelessWidget {
-  const _MlStepper({
-    required this.value,
-    required this.step,
-    required this.onChanged,
-    required this.onType,
-  });
+/// − value + for an amount in ml. The value is a box you can type into.
+class _MlStepper extends StatefulWidget {
+  const _MlStepper({required this.value, required this.step, required this.onChanged});
 
   final int value;
   final int step;
   final ValueChanged<int> onChanged;
-  final VoidCallback onType;
+
+  @override
+  State<_MlStepper> createState() => _MlStepperState();
+}
+
+class _MlStepperState extends State<_MlStepper> {
+  late final TextEditingController _text =
+      TextEditingController(text: widget.value == 0 ? '' : '${widget.value}');
+
+  @override
+  void didUpdateWidget(_MlStepper old) {
+    super.didUpdateWidget(old);
+    // Keep the box in step with − / + and "use last amount", without fighting
+    // what is being typed.
+    if ((int.tryParse(_text.text) ?? 0) != widget.value) {
+      _text.text = widget.value == 0 ? '' : '${widget.value}';
+    }
+  }
+
+  @override
+  void dispose() {
+    _text.dispose();
+    super.dispose();
+  }
+
+  void _set(int v) => widget.onChanged(v.clamp(0, 500));
 
   @override
   Widget build(BuildContext context) {
+    final value = widget.value;
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
         _StepButton(
           icon: Icons.remove_rounded,
           tooltip: 'Less',
-          onTap: value > 0 ? () => onChanged((value - step).clamp(0, 500)) : null,
+          onTap: value > 0 ? () => _set(value - widget.step) : null,
         ),
-        InkWell(
-          onTap: onType,
-          borderRadius: BorderRadius.circular(8),
-          child: Container(
-            constraints: const BoxConstraints(minWidth: 80),
-            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 10),
-            alignment: Alignment.center,
-            child: Text(
-              '$value ml',
-              style: TextStyle(
-                  fontSize: AppText.subtitle, fontWeight: FontWeight.w800, color: AppColors.ink),
+        const SizedBox(width: 8),
+        SizedBox(
+          width: 92,
+          child: TextField(
+            controller: _text,
+            keyboardType: TextInputType.number,
+            textAlign: TextAlign.center,
+            inputFormatters: [
+              FilteringTextInputFormatter.digitsOnly,
+              LengthLimitingTextInputFormatter(3),
+            ],
+            onChanged: (v) => _set(int.tryParse(v) ?? 0),
+            style: TextStyle(
+              fontSize: AppText.subtitle,
+              fontWeight: FontWeight.w800,
+              color: AppColors.ink,
+            ),
+            decoration: InputDecoration(
+              isDense: true,
+              hintText: '0',
+              // Always shown, not only while typing.
+              suffixIcon: Padding(
+                padding: const EdgeInsets.only(right: 10),
+                child: Text(
+                  'ml',
+                  style: TextStyle(fontSize: AppText.body, color: AppColors.muted),
+                ),
+              ),
+              suffixIconConstraints: const BoxConstraints(minWidth: 0, minHeight: 0),
+              filled: true,
+              fillColor: AppColors.field,
+              contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide.none,
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide(color: AppColors.primary, width: 1.5),
+              ),
             ),
           ),
         ),
+        const SizedBox(width: 8),
         _StepButton(
-            icon: Icons.add_rounded,
-            tooltip: 'More',
-            onTap: () => onChanged((value + step).clamp(0, 500))),
+          icon: Icons.add_rounded,
+          tooltip: 'More',
+          onTap: () => _set(value + widget.step),
+        ),
       ],
+    );
+  }
+}
+
+/// The drawer's full-width main button.
+class _PrimaryButton extends StatelessWidget {
+  const _PrimaryButton({required this.label, required this.onPressed});
+
+  final String label;
+  final VoidCallback? onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: double.infinity,
+      child: FilledButton(
+        onPressed: onPressed,
+        style: FilledButton.styleFrom(
+          minimumSize: const Size.fromHeight(52),
+          shape: const StadiumBorder(),
+        ),
+        child: Text(label),
+      ),
     );
   }
 }

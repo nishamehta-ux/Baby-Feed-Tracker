@@ -212,10 +212,12 @@ String entryDetail(Entry e) {
       ].join(' · ');
     case EntryType.diaper:
       return [e.diaper?.label ?? '', if (e.rash) 'rash'].where((s) => s.isNotEmpty).join(' · ');
-    case EntryType.routine:
-      return '';
-    case EntryType.other:
-      return e.valueWithUnit;
+    case EntryType.routine || EntryType.other:
+      // Routines and Other may be timed, e.g. a nap or a doctor visit.
+      return [
+        if (e.type == EntryType.other && e.valueWithUnit.isNotEmpty) e.valueWithUnit,
+        if (e.duration > Duration.zero) formatDuration(e.duration),
+      ].join(' · ');
   }
 }
 

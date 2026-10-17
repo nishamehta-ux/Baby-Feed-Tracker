@@ -21,8 +21,8 @@ class TimelineTile extends StatelessWidget {
     final e = entry;
     final hm = DateFormat.Hm();
     final detail = entryDetail(e);
-    final hasRange =
-        e.type == EntryType.breast || (e.type == EntryType.pump && e.duration > Duration.zero);
+    final hasRange = e.type == EntryType.breast ||
+        (e.type != EntryType.diaper && !e.type.isBottle && e.duration > Duration.zero);
     return InkWell(
       onTap: onTap,
       child: IntrinsicHeight(

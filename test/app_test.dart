@@ -35,12 +35,11 @@ void main() {
 
     // Formula, 30 ml.
     await _openAdd(tester, 'Bottle feeding');
-    expect(find.text('0 ml'), findsOneWidget);
     for (var i = 0; i < 3; i++) {
       await tester.tap(find.byTooltip('More'));
       await tester.pump();
     }
-    expect(find.text('30 ml'), findsOneWidget);
+    expect(find.text('30'), findsOneWidget);
     await tester.tap(find.text('Save'));
     await tester.pumpAndSettle();
 
@@ -56,7 +55,7 @@ void main() {
     await tester.tap(find.text('Yes'));
     await tester.pump();
     expect(
-      find.descendant(of: find.byType(EntrySheet), matching: find.text('30 ml')),
+      find.descendant(of: find.byType(EntrySheet), matching: find.text('30')),
       findsOneWidget,
     );
     await tester.tap(find.text('Save'));
@@ -369,6 +368,50 @@ void main() {
     await store.setBirthDate(DateTime(now.year, now.month, now.day - 21));
     await tester.pumpAndSettle();
     expect(find.text('3 weeks old'), findsWidgets);
+  });
+
+  testWidgets('bottle amount can be typed', (tester) async {
+    final store = await _startApp(tester);
+    await _openAdd(tester, 'Bottle feeding');
+    await tester.enterText(
+      find.descendant(of: find.byType(EntrySheet), matching: find.byType(TextField)).first,
+      '125',
+    );
+    await tester.pump();
+    await tester.tap(find.byTooltip('More'));
+    await tester.pump();
+    expect(find.text('135'), findsOneWidget);
+    await tester.tap(find.text('Save'));
+    await tester.pumpAndSettle();
+    expect(store.entries.single.amountMl, 135);
+  });
+
+  testWidgets('a timed sleep shows as time a day in trends', (tester) async {
+    final store = await _startApp(tester);
+    await _openAdd(tester, 'Routine');
+    await tester.tap(find.text('Sleep'));
+    await tester.pump();
+    await tester.tap(find.byTooltip('Enter the time'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('45 min'));
+    await tester.pump();
+    await tester.tap(find.text('Done'));
+    await tester.pumpAndSettle();
+    expect(find.textContaining('45 m'), findsWidgets); // end time row
+    await tester.tap(find.text('Save'));
+    await tester.pumpAndSettle();
+    final sleep = store.entries.single;
+    expect((sleep.title, sleep.duration), ('Sleep', const Duration(minutes: 45)));
+    expect(find.text('45 m'), findsOneWidget); // timeline detail
+
+    await tester.tap(find.text('Trends'));
+    await tester.pumpAndSettle();
+    final now = DateTime.now();
+    final dayRow = find.byKey(ValueKey('day-${now.year}-${now.month}-${now.day}'));
+    await tester.ensureVisible(dayRow);
+    await tester.pumpAndSettle();
+    expect(find.descendant(of: dayRow, matching: find.text('Sleep 45m')), findsOneWidget);
+    expect(find.textContaining('a day'), findsWidgets);
   });
 
   testWidgets('trends switch to months', (tester) async {
