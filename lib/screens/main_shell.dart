@@ -5,6 +5,7 @@ import '../data/entry_store.dart';
 import '../models/summary.dart';
 import '../theme.dart';
 import 'entry_sheet.dart';
+import 'calendar_screen.dart';
 import 'profile_screen.dart';
 import 'today_screen.dart';
 import 'trends_screen.dart';
@@ -48,9 +49,11 @@ class _MainShellState extends State<MainShell> {
             TodayScreen(
               store: widget.store,
               day: _day,
-              onOpenProfile: () => setState(() => _tab = 2),
+              onOpenProfile: () => setState(() => _tab = 3),
+              onOpenCalendar: () => setState(() => _tab = 2),
             ),
             TrendsScreen(store: widget.store, onOpenDay: _openDay),
+            CalendarScreen(store: widget.store),
             ProfileScreen(store: widget.store),
           ],
         ),
@@ -83,6 +86,11 @@ class _MainShellState extends State<MainShell> {
               icon: Icon(Icons.insights_outlined),
               selectedIcon: Icon(Icons.insights_rounded),
               label: 'Trends',
+            ),
+            NavigationDestination(
+              icon: Icon(Icons.calendar_month_outlined),
+              selectedIcon: Icon(Icons.calendar_month_rounded),
+              label: 'Calendar',
             ),
             NavigationDestination(
               icon: Icon(Icons.person_outline_rounded),

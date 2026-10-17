@@ -9,6 +9,7 @@ import '../widgets/app_logo.dart';
 import '../widgets/common.dart';
 import '../widgets/quick_actions.dart';
 import '../widgets/timeline_tile.dart';
+import 'calendar_screen.dart';
 import 'entry_sheet.dart';
 
 /// Landing page: add a feeding, and the overview of one day (today by default).
@@ -18,6 +19,7 @@ class TodayScreen extends StatefulWidget {
     required this.store,
     required this.day,
     required this.onOpenProfile,
+    required this.onOpenCalendar,
   });
 
   final EntryStore store;
@@ -25,6 +27,9 @@ class TodayScreen extends StatefulWidget {
 
   /// Shows the Profile tab (from the baby's photo and name).
   final VoidCallback onOpenProfile;
+
+  /// Shows the Calendar tab (from the next appointment).
+  final VoidCallback onOpenCalendar;
 
   @override
   State<TodayScreen> createState() => _TodayScreenState();
@@ -79,6 +84,7 @@ class _TodayScreenState extends State<TodayScreen> {
                   const AppLogo(height: 22),
                   const SizedBox(height: 16),
                   _buildHeader(context),
+                  ..._buildNextAppointment(context),
                   const SizedBox(height: 24),
                   if (store.live != null) ...[
                     LiveTimerCard(store: store, onFinish: _finishLive),
@@ -141,6 +147,51 @@ class _TodayScreenState extends State<TodayScreen> {
       helpText: 'Go to a day',
     );
     if (picked != null) widget.day.value = dateOnly(picked);
+  }
+
+  /// A reminder of the next appointment when it's within the coming week.
+  List<Widget> _buildNextAppointment(BuildContext context) {
+    final now = DateTime.now();
+    final next = store.nextAppointment(now);
+    if (next == null || next.start.difference(now) > const Duration(days: 7)) return const [];
+    return [
+      const SizedBox(height: 16),
+      Material(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(AppRadius.tile),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(AppRadius.tile),
+          onTap: widget.onOpenCalendar,
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(14, 12, 10, 12),
+            child: Row(
+              children: [
+                Icon(iconForAppointment(next.kind), color: AppColors.primary, size: 22),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text.rich(
+                    TextSpan(children: [
+                      TextSpan(
+                        text: next.title,
+                        style: const TextStyle(fontWeight: FontWeight.w700),
+                      ),
+                      TextSpan(
+                        text: '  ${relativeDay(next.start, now)}, '
+                            '${DateFormat('EEE d MMM · HH:mm').format(next.start)}',
+                        style: TextStyle(color: AppColors.muted),
+                      ),
+                    ]),
+                    overflow: TextOverflow.ellipsis,
+                    maxLines: 2,
+                  ),
+                ),
+                Icon(Icons.chevron_right_rounded, color: AppColors.muted, size: 20),
+              ],
+            ),
+          ),
+        ),
+      ),
+    ];
   }
 
   Widget _buildHeader(BuildContext context) {

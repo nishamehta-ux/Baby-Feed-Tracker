@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../models/appointment.dart';
 import '../models/entry.dart';
 import '../models/family.dart';
 import '../models/live_timer.dart';
@@ -30,6 +31,7 @@ class EntryStore extends ChangeNotifier {
   static const _accountKey = 'account';
   static const _familyKey = 'family';
   static const _joinCodeKey = 'join_code';
+  static const _appointmentsKey = 'appointments';
 
   SharedPreferences? _prefs;
   final List<Entry> _entries = [];
@@ -41,6 +43,7 @@ class EntryStore extends ChangeNotifier {
   Account? _account;
   final List<Caregiver> _family = [];
   String? _joinCode;
+  final List<Appointment> _appointments = [];
 
   List<Entry> get entries => List.unmodifiable(_entries);
   String get babyName => _babyName;
@@ -58,6 +61,20 @@ class EntryStore extends ChangeNotifier {
 
   /// People invited to help track the baby, oldest invite first.
   List<Caregiver> get family => List.unmodifiable(_family);
+
+  /// Calendar appointments, soonest first.
+  List<Appointment> get appointments =>
+      List.unmodifiable(_appointments.toList()..sort((a, b) => a.start.compareTo(b.start)));
+
+  /// The next appointment from [now] (including one in the last hour, which
+  /// may still be going on), or null.
+  Appointment? nextAppointment(DateTime now) {
+    final from = now.subtract(const Duration(hours: 1));
+    for (final a in appointments) {
+      if (!a.start.isBefore(from)) return a;
+    }
+    return null;
+  }
 
   /// A code entered under Join a family, waiting for syncing to connect.
   String? get joinCode => _joinCode;
@@ -104,6 +121,13 @@ class EntryStore extends ChangeNotifier {
           : (jsonDecode(family) as List<dynamic>)
               .map((e) => Caregiver.fromJson(e as Map<String, dynamic>)));
     _joinCode = _prefs!.getString(_joinCodeKey);
+    final appointments = _prefs!.getString(_appointmentsKey);
+    _appointments
+      ..clear()
+      ..addAll(appointments == null
+          ? const []
+          : (jsonDecode(appointments) as List<dynamic>)
+              .map((e) => Appointment.fromJson(e as Map<String, dynamic>)));
     final live = _prefs!.getString(_liveKey);
     _live = live == null ? null : LiveTimer.fromJson(jsonDecode(live) as Map<String, dynamic>);
     notifyListeners();
@@ -205,6 +229,28 @@ class EntryStore extends ChangeNotifier {
 
   Future<void> _saveFamily() =>
       _prefs?.setString(_familyKey, jsonEncode(_family.map((f) => f.toJson()).toList())) ??
+      Future.value();
+
+  Future<void> saveAppointment(Appointment a) async {
+    final i = _appointments.indexWhere((x) => x.id == a.id);
+    if (i >= 0) {
+      _appointments[i] = a;
+    } else {
+      _appointments.add(a);
+    }
+    notifyListeners();
+    await _saveAppointments();
+  }
+
+  Future<void> deleteAppointment(String id) async {
+    _appointments.removeWhere((a) => a.id == id);
+    notifyListeners();
+    await _saveAppointments();
+  }
+
+  Future<void> _saveAppointments() =>
+      _prefs?.setString(
+          _appointmentsKey, jsonEncode(_appointments.map((a) => a.toJson()).toList())) ??
       Future.value();
 
   /// Keeps a join code until syncing can use it; null clears it.

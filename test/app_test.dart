@@ -1,5 +1,6 @@
 import 'package:baby_feed_tracker/data/entry_store.dart';
 import 'package:baby_feed_tracker/main.dart';
+import 'package:baby_feed_tracker/models/appointment.dart';
 import 'package:baby_feed_tracker/models/entry.dart';
 import 'package:baby_feed_tracker/models/family.dart';
 import 'package:baby_feed_tracker/screens/entry_sheet.dart';
@@ -527,6 +528,73 @@ void main() {
     await tester.pumpAndSettle();
     expect(store.joinCode, 'K7Q2MX');
     expect(find.textContaining('Joining with code K7Q2MX'), findsOneWidget);
+  });
+
+  testWidgets('add, edit and delete an appointment in the calendar', (tester) async {
+    final store = await _startApp(tester);
+    await tester.tap(find.text('Calendar'));
+    await tester.pumpAndSettle();
+    expect(find.text('Nothing planned.'), findsOneWidget);
+
+    await tester.tap(find.text('Add appointment'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Vaccination'));
+    await tester.pump();
+    await tester.enterText(find.widgetWithText(TextField, 'Where'), 'Riverside clinic');
+    await tester.tap(find.text('Save'));
+    await tester.pumpAndSettle();
+    final a = store.appointments.single;
+    expect((a.kind, a.title, a.place),
+        (AppointmentKind.vaccination, 'Vaccination', 'Riverside clinic'));
+    expect(find.text('NEXT UP'), findsOneWidget);
+
+    // Edit from the day's list, then delete.
+    await tester.ensureVisible(find.text('Vaccination').last);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Vaccination').last);
+    await tester.pumpAndSettle();
+    await tester.enterText(find.widgetWithText(TextField, 'What'), '8-week jabs');
+    await tester.tap(find.text('Save changes'));
+    await tester.pumpAndSettle();
+    expect(store.appointments.single.title, '8-week jabs');
+
+    await tester.ensureVisible(find.text('8-week jabs').last);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('8-week jabs').last);
+    await tester.pumpAndSettle();
+    final delete = find.text('Delete appointment');
+    await tester.ensureVisible(delete);
+    await tester.pumpAndSettle();
+    await tester.tap(delete);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Delete'));
+    await tester.pumpAndSettle();
+    expect(store.appointments, isEmpty);
+  });
+
+  testWidgets('today shows the next appointment within a week', (tester) async {
+    final store = await _startApp(tester);
+    final soon = DateTime.now().add(const Duration(days: 3));
+    await store.saveAppointment(Appointment(
+      id: 'a',
+      kind: AppointmentKind.checkup,
+      title: '2-month check-up',
+      start: DateTime(soon.year, soon.month, soon.day, 10, 30),
+    ));
+    await store.saveAppointment(Appointment(
+      id: 'b',
+      kind: AppointmentKind.doctor,
+      title: 'Far away',
+      start: DateTime.now().add(const Duration(days: 30)),
+    ));
+    await tester.pumpAndSettle();
+    expect(find.textContaining('2-month check-up', findRichText: true), findsOneWidget);
+    expect(find.textContaining('in 3 days', findRichText: true), findsOneWidget);
+    expect(find.textContaining('Far away', findRichText: true), findsNothing);
+
+    await tester.tap(find.textContaining('2-month check-up', findRichText: true));
+    await tester.pumpAndSettle();
+    expect(find.text('NEXT UP'), findsOneWidget);
   });
 
   testWidgets('trends switch to months', (tester) async {
