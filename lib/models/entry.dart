@@ -52,6 +52,7 @@ class Entry {
     this.value = '',
     this.unit = '',
     this.notes = '',
+    this.by = '',
   });
 
   final String id;
@@ -86,6 +87,30 @@ class Entry {
 
   final String notes;
 
+  /// Who logged it (their name), when someone was signed in.
+  final String by;
+
+  /// This entry with [by] set.
+  Entry withAuthor(String name) => Entry(
+        id: id,
+        type: type,
+        start: start,
+        end: end,
+        leftDuration: leftDuration,
+        rightDuration: rightDuration,
+        endSide: endSide,
+        amountMl: amountMl,
+        leftMl: leftMl,
+        rightMl: rightMl,
+        diaper: diaper,
+        rash: rash,
+        title: title,
+        value: value,
+        unit: unit,
+        notes: notes,
+        by: name,
+      );
+
   bool get isBottle => type.isBottle;
   Duration get duration => end.difference(start).isNegative ? Duration.zero : end.difference(start);
 
@@ -117,6 +142,7 @@ class Entry {
         'value': value,
         'unit': unit,
         'notes': notes,
+        if (by.isNotEmpty) 'by': by,
       };
 
   /// Reads entries saved by any version of the app; fields added later
@@ -139,5 +165,6 @@ class Entry {
         value: json['value'] as String? ?? '',
         unit: json['unit'] as String? ?? '',
         notes: json['notes'] as String? ?? '',
+        by: json['by'] as String? ?? '',
       );
 }

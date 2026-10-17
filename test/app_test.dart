@@ -1,6 +1,7 @@
 import 'package:baby_feed_tracker/data/entry_store.dart';
 import 'package:baby_feed_tracker/main.dart';
 import 'package:baby_feed_tracker/models/entry.dart';
+import 'package:baby_feed_tracker/models/family.dart';
 import 'package:baby_feed_tracker/screens/entry_sheet.dart';
 import 'package:baby_feed_tracker/theme.dart';
 import 'package:flutter/material.dart';
@@ -316,6 +317,8 @@ void main() {
 
     await tester.tap(find.text('Profile'));
     await tester.pumpAndSettle();
+    await tester.ensureVisible(find.text('Dark'));
+    await tester.pumpAndSettle();
     await tester.tap(find.text('Dark'));
     await tester.pumpAndSettle();
     expect(store.appearance, Appearance.dark);
@@ -350,7 +353,7 @@ void main() {
     await tester.tap(find.widgetWithText(FilledButton, 'Sign in').last);
     await tester.pumpAndSettle();
     expect(store.account?.email, 'sam@example.com');
-    expect(find.text('sam@example.com'), findsOneWidget);
+    expect(find.text('sam@example.com'), findsWidgets);
 
     final logOut = find.widgetWithText(OutlinedButton, 'Log out');
     await tester.ensureVisible(logOut);
@@ -471,6 +474,59 @@ void main() {
     await tester.pumpAndSettle();
     expect(copied, contains('BCG'));
     expect(find.text('Copied. Paste it into a message or email.'), findsOneWidget);
+  });
+
+  testWidgets('invite someone by email from the family card', (tester) async {
+    final store = await _startApp(tester);
+    await store.signIn(const Account(name: 'Nisha', email: 'nisha@example.com'));
+    await tester.pumpAndSettle();
+    // No email app in tests: the launcher says it couldn't open one.
+    tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+      const MethodChannel('plugins.flutter.io/url_launcher'),
+      (call) async => false,
+    );
+    await tester.tap(find.text('Profile'));
+    await tester.pumpAndSettle();
+
+    final invite = find.text('Invite someone');
+    await tester.ensureVisible(invite);
+    await tester.pumpAndSettle();
+    await tester.tap(invite);
+    await tester.pumpAndSettle();
+    await tester.enterText(find.widgetWithText(TextField, 'Their name'), 'Raj');
+    await tester.enterText(find.widgetWithText(TextField, 'Their email'), 'nisha@example.com');
+    await tester.tap(find.text('Send invite'));
+    await tester.pump();
+    expect(find.text('This person is already in your family.'), findsOneWidget);
+    await tester.enterText(find.widgetWithText(TextField, 'Their email'), 'raj@example.com');
+    await tester.tap(find.text('Send invite'));
+    await tester.pumpAndSettle();
+
+    // No email app in tests: the invite is copied instead.
+    final raj = store.family.single;
+    expect((raj.name, raj.email, raj.access), ('Raj', 'raj@example.com', Access.edit));
+    expect(find.textContaining('The invite is copied'), findsOneWidget);
+    expect(find.text('raj@example.com · Can add and edit'), findsOneWidget);
+  });
+
+  testWidgets('join a family with a code', (tester) async {
+    final store = await _startApp(tester);
+    await tester.tap(find.text('Profile'));
+    await tester.pumpAndSettle();
+    final join = find.text('Got an invite? Join a family');
+    await tester.ensureVisible(join);
+    await tester.pumpAndSettle();
+    await tester.tap(join);
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextField).last, 'k7q');
+    await tester.tap(find.text('Join'));
+    await tester.pump();
+    expect(find.text('The code has 6 letters and numbers.'), findsOneWidget);
+    await tester.enterText(find.byType(TextField).last, 'k7q 2mx');
+    await tester.tap(find.text('Join'));
+    await tester.pumpAndSettle();
+    expect(store.joinCode, 'K7Q2MX');
+    expect(find.textContaining('Joining with code K7Q2MX'), findsOneWidget);
   });
 
   testWidgets('trends switch to months', (tester) async {

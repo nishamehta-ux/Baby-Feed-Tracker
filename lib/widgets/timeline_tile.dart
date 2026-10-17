@@ -9,12 +9,15 @@ import 'presets.dart';
 
 /// One entry in the day's timeline: the time on the left, then what it was.
 class TimelineTile extends StatelessWidget {
-  const TimelineTile({super.key, required this.entry, this.onTap});
+  const TimelineTile({super.key, required this.entry, this.onTap, this.showAuthor = false});
 
   final Entry entry;
 
   /// Null for a read-only list.
   final VoidCallback? onTap;
+
+  /// Shows who logged it, when more than one person tracks the baby.
+  final bool showAuthor;
 
   @override
   Widget build(BuildContext context) {
@@ -82,6 +85,11 @@ class TimelineTile extends StatelessWidget {
                   children: [
                     Text(entryTitle(e), style: const TextStyle(fontWeight: FontWeight.w700)),
                     if (detail.isNotEmpty) Text(detail, style: TextStyle(color: AppColors.muted)),
+                    if (showAuthor && e.by.isNotEmpty)
+                      Text(
+                        'by ${e.by}',
+                        style: TextStyle(fontSize: AppText.label, color: AppColors.muted),
+                      ),
                     if (e.notes.isNotEmpty)
                       Padding(
                         padding: const EdgeInsets.only(top: 2),

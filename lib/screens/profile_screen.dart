@@ -7,6 +7,7 @@ import '../models/summary.dart';
 import '../theme.dart';
 import '../widgets/app_logo.dart';
 import '../widgets/common.dart';
+import 'family_section.dart';
 import 'passport_screen.dart';
 
 /// The third tab: the baby's profile (photo, name, birth date), the app's
@@ -35,6 +36,10 @@ class ProfileScreen extends StatelessWidget {
                 const SizedBox(height: 12),
                 _PassportLink(store: store),
                 const SizedBox(height: 28),
+                const SectionLabel('Family'),
+                const SizedBox(height: 10),
+                FamilyCard(store: store),
+                const SizedBox(height: 28),
                 const SectionLabel('Appearance'),
                 const SizedBox(height: 10),
                 SizedBox(
@@ -61,6 +66,19 @@ class ProfileScreen extends StatelessWidget {
       ),
     );
   }
+}
+
+/// Asks for a name and email and signs in. Completes with true when signed in.
+Future<bool> promptSignIn(BuildContext context, EntryStore store) async {
+  final account = await showModalBottomSheet<Account>(
+    context: context,
+    isScrollControlled: true,
+    showDragHandle: true,
+    builder: (context) => const _SignInSheet(),
+  );
+  if (account == null) return false;
+  await store.signIn(account);
+  return true;
 }
 
 /// Opens a dialog to rename the baby.
@@ -231,15 +249,7 @@ class _AccountCard extends StatelessWidget {
 
   final EntryStore store;
 
-  Future<void> _signIn(BuildContext context) async {
-    final account = await showModalBottomSheet<Account>(
-      context: context,
-      isScrollControlled: true,
-      showDragHandle: true,
-      builder: (context) => const _SignInSheet(),
-    );
-    if (account != null) await store.signIn(account);
-  }
+  Future<void> _signIn(BuildContext context) => promptSignIn(context, store);
 
   Future<void> _signOut(BuildContext context) async {
     final ok = await showDialog<bool>(

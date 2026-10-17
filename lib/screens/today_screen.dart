@@ -338,7 +338,11 @@ class _TodayScreenState extends State<TodayScreen> {
                   child: const Icon(Icons.delete_outline_rounded, color: Colors.white),
                 ),
                 onDismissed: (_) => _delete(e),
-                child: TimelineTile(entry: e, onTap: () => _openEditor(e)),
+                child: TimelineTile(
+                  entry: e,
+                  onTap: () => _openEditor(e),
+                  showAuthor: store.family.isNotEmpty,
+                ),
               ),
             const SizedBox(height: 8),
             Text(
