@@ -1,5 +1,6 @@
 import 'package:intl/intl.dart';
 
+import 'appointment.dart';
 import 'entry.dart';
 import 'summary.dart';
 import 'trends.dart';
@@ -30,6 +31,7 @@ class Passport {
     required this.averages,
     required this.totals,
     required this.sleepPerDay,
+    this.visits = const [],
   });
 
   final String babyName;
@@ -58,6 +60,9 @@ class Passport {
   /// Logged sleep per day, or null when none was logged with a length.
   final Duration? sleepPerDay;
 
+  /// The latest past appointments with visit notes, newest first.
+  final List<Appointment> visits;
+
   static const _measurementOrder = ['Weight', 'Height', 'Head size', 'Temperature'];
 
   /// Builds the passport as of [now], averaging the [window] finished days
@@ -68,6 +73,7 @@ class Passport {
     required DateTime? birthDate,
     required DateTime now,
     int window = 7,
+    Iterable<Appointment> appointments = const [],
   }) {
     final entries = all.toList();
     final today = dateOnly(now);
@@ -142,6 +148,10 @@ class Passport {
       medicines: medicines,
       averages: days == 0 ? const Totals() : totals.dividedBy(days),
       totals: totals,
+      visits: (appointments.where((a) => a.isPast(now) && a.visitNotes.trim().isNotEmpty).toList()
+            ..sort((a, b) => b.start.compareTo(a.start)))
+          .take(5)
+          .toList(),
       sleepPerDay: days == 0 || sleep == Duration.zero
           ? null
           : Duration(minutes: (sleep.inMinutes / days).round()),
@@ -195,6 +205,18 @@ class Passport {
     for (final m in medicines) {
       b.writeln('${m.name}: ${_times(m.times)}, last ${date.format(m.last)}'
           '${m.times > 1 ? ' (since ${date.format(m.first)})' : ''}');
+    }
+
+    if (visits.isNotEmpty) {
+      b
+        ..writeln()
+        ..writeln('RECENT VISITS');
+      for (final v in visits) {
+        final who = [v.withWhom, v.place].where((s) => s.isNotEmpty).join(', ');
+        b
+          ..writeln('${date.format(v.start)}: ${v.title}${who.isEmpty ? '' : ' ($who)'}')
+          ..writeln('  ${v.visitNotes.trim().replaceAll('\n', '\n  ')}');
+      }
     }
 
     b

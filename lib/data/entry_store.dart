@@ -76,6 +76,17 @@ class EntryStore extends ChangeNotifier {
     return null;
   }
 
+  /// The most recent appointment of the last 3 days that has no visit notes
+  /// yet, to ask how it went; or null.
+  Appointment? visitNotesDue(DateTime now) {
+    final from = now.subtract(const Duration(days: 3));
+    Appointment? due;
+    for (final a in appointments) {
+      if (a.start.isAfter(from) && a.start.isBefore(now) && a.visitNotes.trim().isEmpty) due = a;
+    }
+    return due;
+  }
+
   /// A code entered under Join a family, waiting for syncing to connect.
   String? get joinCode => _joinCode;
 

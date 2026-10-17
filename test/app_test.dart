@@ -4,6 +4,7 @@ import 'package:baby_feed_tracker/models/appointment.dart';
 import 'package:baby_feed_tracker/models/entry.dart';
 import 'package:baby_feed_tracker/models/family.dart';
 import 'package:baby_feed_tracker/screens/entry_sheet.dart';
+import 'package:baby_feed_tracker/screens/passport_screen.dart';
 import 'package:baby_feed_tracker/theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -595,6 +596,53 @@ void main() {
     await tester.tap(find.textContaining('2-month check-up', findRichText: true));
     await tester.pumpAndSettle();
     expect(find.text('NEXT UP'), findsOneWidget);
+  });
+
+  testWidgets('visit notes after an appointment', (tester) async {
+    final store = await _startApp(tester);
+    final yesterday = DateTime.now().subtract(const Duration(days: 1));
+    await store.saveAppointment(Appointment(
+      id: 'v',
+      kind: AppointmentKind.checkup,
+      title: '6-week check',
+      start: DateTime(yesterday.year, yesterday.month, yesterday.day, 10),
+      withWhom: 'Dr Patel',
+    ));
+    await tester.pumpAndSettle();
+
+    // Today asks how it went and opens straight into the notes.
+    final ask = find.textContaining('How was the 6-week check?', findRichText: true);
+    expect(ask, findsOneWidget);
+    await tester.tap(ask);
+    await tester.pumpAndSettle();
+    expect(find.text('Visit notes'), findsOneWidget);
+    await tester.enterText(
+        find.widgetWithText(TextField, 'e.g. Weight on track. Next vaccines at 12 weeks.'),
+        'Gaining well. Start tummy time twice a day.');
+    await tester.tap(find.text('Save changes'));
+    await tester.pumpAndSettle();
+    expect(store.appointments.single.visitNotes, 'Gaining well. Start tummy time twice a day.');
+    expect(ask, findsNothing);
+
+    // The calendar's past visits show the notes.
+    await tester.tap(find.text('Calendar'));
+    await tester.pumpAndSettle();
+    final notes = find.text('Gaining well. Start tummy time twice a day.');
+    await tester.ensureVisible(notes.last);
+    expect(notes, findsWidgets);
+    expect(find.text('PAST VISITS'), findsOneWidget);
+
+    // And so does the health passport.
+    await tester.tap(find.text('Profile'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Health passport'));
+    await tester.pumpAndSettle();
+    final recent = find.text('Recent visits');
+    await tester.scrollUntilVisible(recent, 300,
+        scrollable: find
+            .descendant(of: find.byType(PassportScreen), matching: find.byType(Scrollable))
+            .first);
+    expect(recent, findsOneWidget);
   });
 
   testWidgets('trends switch to months', (tester) async {

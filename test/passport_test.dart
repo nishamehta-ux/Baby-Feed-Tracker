@@ -1,3 +1,4 @@
+import 'package:baby_feed_tracker/models/appointment.dart';
 import 'package:baby_feed_tracker/models/entry.dart';
 import 'package:baby_feed_tracker/models/passport.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -93,5 +94,34 @@ void main() {
     expect(text, contains('14 Oct 2026: 6-in-1, 1st dose'));
     expect(text, contains('paracetamol 2.5 ml: 2 times, last 13 Oct 2026 (since 12 Oct 2026)'));
     expect(text, contains('Not a medical record.'));
+  });
+
+  test('recent visits with notes are included, newest first', () {
+    final p = Passport.from(entries, babyName: 'Ava', birthDate: null, now: now, appointments: [
+      Appointment(
+          id: '1',
+          kind: AppointmentKind.checkup,
+          title: 'Newborn check',
+          start: day(40),
+          visitNotes: 'All fine.'),
+      Appointment(
+          id: '2',
+          kind: AppointmentKind.doctor,
+          title: 'Cold',
+          start: day(5),
+          withWhom: 'Dr Patel',
+          visitNotes: 'Saline drops.\nCome back if fever.'),
+      Appointment(id: '3', kind: AppointmentKind.checkup, title: 'No notes', start: day(2)),
+      Appointment(
+          id: '4',
+          kind: AppointmentKind.vaccination,
+          title: 'Future',
+          start: day(-3),
+          visitNotes: 'x'),
+    ]);
+    expect(p.visits.map((v) => v.title), ['Cold', 'Newborn check']);
+    final text = p.toText();
+    expect(text, contains('RECENT VISITS'));
+    expect(text, contains('12 Oct 2026: Cold (Dr Patel)\n  Saline drops.\n  Come back if fever.'));
   });
 }

@@ -23,6 +23,7 @@ class Appointment {
     this.withWhom = '',
     this.place = '',
     this.notes = '',
+    this.visitNotes = '',
   });
 
   final String id;
@@ -35,7 +36,12 @@ class Appointment {
   /// Doctor, nurse or clinic person.
   final String withWhom;
   final String place;
+
+  /// Before the visit: questions to ask, what to bring.
   final String notes;
+
+  /// After the visit: what the doctor said, advice, next steps.
+  final String visitNotes;
 
   bool isPast(DateTime now) => start.isBefore(now);
 
@@ -47,6 +53,7 @@ class Appointment {
         'with': withWhom,
         'place': place,
         'notes': notes,
+        'visitNotes': visitNotes,
       };
 
   factory Appointment.fromJson(Map<String, dynamic> json) => Appointment(
@@ -57,5 +64,6 @@ class Appointment {
         withWhom: json['with'] as String? ?? '',
         place: json['place'] as String? ?? '',
         notes: json['notes'] as String? ?? '',
+        visitNotes: json['visitNotes'] as String? ?? '',
       );
 }

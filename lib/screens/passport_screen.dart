@@ -35,6 +35,7 @@ class _PassportScreenState extends State<PassportScreen> {
         birthDate: widget.store.birthDate,
         now: DateTime.now(),
         window: _window,
+        appointments: widget.store.appointments,
       );
 
   Future<void> _share(Passport p, Rect origin) async {
@@ -130,6 +131,19 @@ class _PassportScreenState extends State<PassportScreen> {
                             ),
                         ],
                       ),
+                      if (p.visits.isNotEmpty)
+                        _Section(
+                          title: 'Recent visits',
+                          children: [
+                            for (final v in p.visits)
+                              _Line(
+                                icon: Icons.sticky_note_2_rounded,
+                                title: v.title,
+                                detail: v.visitNotes.trim(),
+                                trailing: DateFormat('d MMM yyyy').format(v.start),
+                              ),
+                          ],
+                        ),
                       _Section(
                         title: 'Daily averages',
                         action: SegmentedButton<int>(

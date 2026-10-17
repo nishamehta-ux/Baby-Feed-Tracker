@@ -57,6 +57,14 @@ class _CalendarScreenState extends State<CalendarScreen> {
 
   void _shiftMonth(int by) => setState(() => _month = DateTime(_month.year, _month.month + by));
 
+  /// Opens [a]; a past one without visit notes opens ready to write them.
+  void _open(Appointment a, DateTime now) => showAppointmentSheet(
+        context,
+        store,
+        existing: a,
+        writeVisitNotes: a.isPast(now) && a.visitNotes.trim().isEmpty,
+      );
+
   void _select(DateTime day) => setState(() {
         _selected = day;
         _month = DateTime(day.year, day.month);
@@ -72,6 +80,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
         final next = store.nextAppointment(now);
         final onDay = all.where((a) => isSameDay(a.start, _selected)).toList();
         final upcoming = all.where((a) => !a.start.isBefore(dateOnly(now))).toList();
+        final pastVisits = all.where((a) => a.isPast(now)).toList().reversed.toList();
         return Scaffold(
           backgroundColor: Colors.transparent,
           floatingActionButton: FloatingActionButton.extended(
@@ -137,7 +146,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
                                 appointment: a,
                                 now: now,
                                 showDay: false,
-                                onTap: () => showAppointmentSheet(context, store, existing: a),
+                                onTap: () => _open(a, now),
                               ),
                         ],
                       ),
@@ -154,7 +163,26 @@ class _CalendarScreenState extends State<CalendarScreen> {
                                 appointment: a,
                                 now: now,
                                 showDay: true,
-                                onTap: () => showAppointmentSheet(context, store, existing: a),
+                                onTap: () => _open(a, now),
+                              ),
+                          ],
+                        ),
+                      ),
+                    ],
+                    // Every past appointment with what was said there.
+                    if (pastVisits.isNotEmpty) ...[
+                      const SizedBox(height: 28),
+                      const SectionLabel('Past visits'),
+                      const SizedBox(height: 10),
+                      AppCard(
+                        child: Column(
+                          children: [
+                            for (final a in pastVisits.take(20))
+                              _AppointmentTile(
+                                appointment: a,
+                                now: now,
+                                showDay: true,
+                                onTap: () => _open(a, now),
                               ),
                           ],
                         ),
@@ -281,6 +309,37 @@ class _AppointmentTile extends StatelessWidget {
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(fontSize: AppText.label, color: AppColors.muted),
                   ),
+                  if (past && a.visitNotes.trim().isNotEmpty)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 4),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Icon(Icons.sticky_note_2_rounded, size: 14, color: AppColors.muted),
+                          const SizedBox(width: 4),
+                          Expanded(
+                            child: Text(
+                              a.visitNotes.trim(),
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(fontSize: AppText.label, color: AppColors.ink),
+                            ),
+                          ),
+                        ],
+                      ),
+                    )
+                  else if (past)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 2),
+                      child: Text(
+                        'Add visit notes',
+                        style: TextStyle(
+                          fontSize: AppText.label,
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.primary,
+                        ),
+                      ),
+                    ),
                 ],
               ),
             ),
@@ -431,27 +490,40 @@ class _MonthGrid extends StatelessWidget {
 }
 
 /// Opens the form to add an appointment on [day], or to edit [existing].
+/// [writeVisitNotes] puts the cursor in the visit notes straight away.
 Future<void> showAppointmentSheet(
   BuildContext context,
   EntryStore store, {
   Appointment? existing,
   DateTime? day,
+  bool writeVisitNotes = false,
 }) {
   return showModalBottomSheet<void>(
     context: context,
     isScrollControlled: true,
     useSafeArea: true,
     backgroundColor: Colors.transparent,
-    builder: (_) => _AppointmentSheet(store: store, existing: existing, day: day),
+    builder: (_) => _AppointmentSheet(
+      store: store,
+      existing: existing,
+      day: day,
+      writeVisitNotes: writeVisitNotes,
+    ),
   );
 }
 
 class _AppointmentSheet extends StatefulWidget {
-  const _AppointmentSheet({required this.store, this.existing, this.day});
+  const _AppointmentSheet({
+    required this.store,
+    this.existing,
+    this.day,
+    this.writeVisitNotes = false,
+  });
 
   final EntryStore store;
   final Appointment? existing;
   final DateTime? day;
+  final bool writeVisitNotes;
 
   @override
   State<_AppointmentSheet> createState() => _AppointmentSheetState();
@@ -464,6 +536,7 @@ class _AppointmentSheetState extends State<_AppointmentSheet> {
   late final TextEditingController _with;
   late final TextEditingController _place;
   late final TextEditingController _notes;
+  late final TextEditingController _visit;
   bool _titleEdited = false;
   bool _saving = false;
   String? _error;
@@ -490,6 +563,7 @@ class _AppointmentSheetState extends State<_AppointmentSheet> {
     _with = TextEditingController(text: e?.withWhom ?? '');
     _place = TextEditingController(text: e?.place ?? '');
     _notes = TextEditingController(text: e?.notes ?? '');
+    _visit = TextEditingController(text: e?.visitNotes ?? '');
   }
 
   @override
@@ -498,6 +572,7 @@ class _AppointmentSheetState extends State<_AppointmentSheet> {
     _with.dispose();
     _place.dispose();
     _notes.dispose();
+    _visit.dispose();
     super.dispose();
   }
 
@@ -566,6 +641,7 @@ class _AppointmentSheetState extends State<_AppointmentSheet> {
         withWhom: _with.text.trim(),
         place: _place.text.trim(),
         notes: _notes.text.trim(),
+        visitNotes: _visit.text.trim(),
       ));
     } catch (_) {
       if (mounted) {
@@ -595,14 +671,22 @@ class _AppointmentSheetState extends State<_AppointmentSheet> {
     await widget.store.deleteAppointment(widget.existing!.id);
   }
 
-  Widget _field(String label, TextEditingController c, {String? hint, int maxLines = 1}) {
+  Widget _field(
+    String label,
+    TextEditingController c, {
+    String? hint,
+    int maxLines = 1,
+    bool autofocus = false,
+  }) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 4, 20, 4),
       child: TextField(
         controller: c,
+        autofocus: autofocus,
+        minLines: maxLines > 1 ? 2 : 1,
         maxLines: maxLines,
         textCapitalization: TextCapitalization.sentences,
-        decoration: InputDecoration(labelText: label, hintText: hint),
+        decoration: InputDecoration(labelText: label.isEmpty ? null : label, hintText: hint),
         onChanged: c == _title ? (_) => _titleEdited = true : null,
       ),
     );
@@ -610,6 +694,43 @@ class _AppointmentSheetState extends State<_AppointmentSheet> {
 
   @override
   Widget build(BuildContext context) {
+    final past = _start.isBefore(DateTime.now());
+    final visitNotes = Container(
+      margin: const EdgeInsets.fromLTRB(20, 12, 20, 8),
+      padding: const EdgeInsets.fromLTRB(4, 8, 4, 8),
+      decoration: BoxDecoration(
+        color: AppColors.field,
+        borderRadius: BorderRadius.circular(AppRadius.tile),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 4, 16, 0),
+            child: Row(
+              children: [
+                Icon(Icons.sticky_note_2_rounded, size: 18, color: AppColors.primary),
+                const SizedBox(width: 6),
+                Text('Visit notes', style: Theme.of(context).textTheme.titleMedium),
+              ],
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 2, 16, 0),
+            child: Text(
+              past
+                  ? 'What the doctor said, advice and next steps.'
+                  : 'Fill in after the visit: what the doctor said, advice and next steps.',
+              style: TextStyle(fontSize: AppText.label, color: AppColors.muted),
+            ),
+          ),
+          _field('', _visit,
+              hint: 'e.g. Weight on track. Next vaccines at 12 weeks.',
+              maxLines: 8,
+              autofocus: widget.writeVisitNotes),
+        ],
+      ),
+    );
     return FractionallySizedBox(
       heightFactor: 0.94,
       child: ClipRRect(
@@ -704,7 +825,11 @@ class _AppointmentSheetState extends State<_AppointmentSheet> {
                       ),
                       _field('With', _with, hint: 'e.g. Dr Patel, health visitor'),
                       _field('Where', _place, hint: 'e.g. Riverside clinic'),
-                      _field('Notes', _notes, hint: 'Questions to ask, what to bring', maxLines: 3),
+                      // After the visit, its notes come first; before, they wait at the end.
+                      if (past) visitNotes,
+                      _field('To ask or bring', _notes,
+                          hint: 'Questions to ask, what to bring', maxLines: 3),
+                      if (!past) visitNotes,
                       if (_isEditing)
                         Padding(
                           padding: const EdgeInsets.only(top: 16),
