@@ -18,11 +18,17 @@ BreastSide nextSide(EntryStore store) =>
 /// One-tap tiles on Today: start a breastfeeding or pumping timer, or log a
 /// repeat of the last bottle or a diaper straight away. [onLogged] runs after
 /// an instant log, so the page can offer Undo.
+///
+/// The tiles are ordered by use: whatever was logged most in the last
+/// [usageWindow] comes first. Ties keep the default order, which is also the
+/// order before anything has been logged.
 class QuickActions extends StatelessWidget {
   const QuickActions({super.key, required this.store, required this.onLogged});
 
   final EntryStore store;
   final ValueChanged<Entry> onLogged;
+
+  static const usageWindow = Duration(days: 14);
 
   Future<void> _log(Entry Function(DateTime now) make) async {
     final entry = make(DateTime.now());
@@ -43,48 +49,75 @@ class QuickActions extends StatelessWidget {
           amountMl: ml,
         );
 
-    final tiles = <Widget>[
+    // How often each tile's kind was logged recently.
+    final since = DateTime.now().subtract(usageWindow);
+    final recent = store.entries.where((e) => e.start.isAfter(since)).toList();
+    int used(bool Function(Entry e) test) => recent.where(test).length;
+
+    final tiles = <(int, Widget)>[
       if (store.live == null) ...[
-        _Tile(
-          type: EntryType.breast,
-          title: 'Breastfeed',
-          subtitle: 'Next: ${side == BreastSide.left ? 'left' : 'right'} side',
-          onTap: () => store.setLive(LiveTimer.ready(EntryType.breast, DateTime.now())),
+        (
+          used((e) => e.type == EntryType.breast),
+          _Tile(
+            type: EntryType.breast,
+            title: 'Breastfeed',
+            subtitle: 'Next: ${side == BreastSide.left ? 'left' : 'right'} side',
+            onTap: () => store.setLive(LiveTimer.ready(EntryType.breast, DateTime.now())),
+          )
         ),
-        _Tile(
-          type: EntryType.pump,
-          title: 'Pump',
-          subtitle: 'Timer',
-          onTap: () => store.setLive(LiveTimer.ready(EntryType.pump, DateTime.now())),
+        (
+          used((e) => e.type == EntryType.pump),
+          _Tile(
+            type: EntryType.pump,
+            title: 'Pump',
+            subtitle: 'Timer',
+            onTap: () => store.setLive(LiveTimer.ready(EntryType.pump, DateTime.now())),
+          )
         ),
       ],
       if (lastBottle != null && lastBottle.amountMl > 0)
-        _Tile(
-          type: lastBottle.type,
-          title: 'Bottle ${lastBottle.amountMl} ml',
-          subtitle: lastBottle.type.shortLabel,
-          onTap: () => _log((now) => plain(now, lastBottle.type, ml: lastBottle.amountMl)),
+        (
+          used((e) => e.isBottle),
+          _Tile(
+            type: lastBottle.type,
+            title: 'Bottle ${lastBottle.amountMl} ml',
+            subtitle: lastBottle.type.shortLabel,
+            onTap: () => _log((now) => plain(now, lastBottle.type, ml: lastBottle.amountMl)),
+          )
         ),
-      _Tile(
-        type: EntryType.diaper,
-        title: 'Diaper',
-        subtitle: 'Wet',
-        onTap: () => _log((now) => plain(now, EntryType.diaper, diaper: DiaperKind.wet)),
+      (
+        used((e) => e.diaper == DiaperKind.wet),
+        _Tile(
+          type: EntryType.diaper,
+          title: 'Diaper',
+          subtitle: 'Wet',
+          onTap: () => _log((now) => plain(now, EntryType.diaper, diaper: DiaperKind.wet)),
+        )
       ),
-      _Tile(
-        type: EntryType.diaper,
-        title: 'Diaper',
-        subtitle: 'Dirty',
-        onTap: () => _log((now) => plain(now, EntryType.diaper, diaper: DiaperKind.dirty)),
+      (
+        used((e) => e.diaper == DiaperKind.dirty || e.diaper == DiaperKind.both),
+        _Tile(
+          type: EntryType.diaper,
+          title: 'Diaper',
+          subtitle: 'Dirty',
+          onTap: () => _log((now) => plain(now, EntryType.diaper, diaper: DiaperKind.dirty)),
+        )
       ),
     ];
+    // Most used first; List.sort isn't stable, so ties fall back to the
+    // default position.
+    final order = [for (var i = 0; i < tiles.length; i++) i]..sort((a, b) {
+        final byUse = tiles[b].$1.compareTo(tiles[a].$1);
+        return byUse != 0 ? byUse : a.compareTo(b);
+      });
+    final sorted = [for (final i in order) tiles[i].$2];
 
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
       clipBehavior: Clip.none,
       child: Row(
         children: [
-          for (final t in tiles) ...[t, const SizedBox(width: 8)],
+          for (final t in sorted) ...[t, const SizedBox(width: 8)],
         ],
       ),
     );

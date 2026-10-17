@@ -414,6 +414,28 @@ void main() {
     expect(find.textContaining('a day'), findsWidgets);
   });
 
+  testWidgets('quick add puts the most used first', (tester) async {
+    final store = await _startApp(tester);
+    double x(String text) => tester.getTopLeft(find.text(text).first).dx;
+    // Default order before anything is logged.
+    expect(x('Breastfeed'), lessThan(x('Pump')));
+
+    final now = DateTime.now();
+    for (var i = 0; i < 3; i++) {
+      final t = now.subtract(Duration(hours: i + 1));
+      await store.upsert(
+          Entry(id: 'd$i', type: EntryType.diaper, start: t, end: t, diaper: DiaperKind.dirty));
+    }
+    final p = now.subtract(const Duration(hours: 5));
+    await store.upsert(Entry(id: 'p', type: EntryType.pump, start: p, end: p, amountMl: 50));
+    await tester.pumpAndSettle();
+
+    // Dirty diapers (3), then pumping (1), then the rest in default order.
+    expect(x('Dirty'), lessThan(x('Pump')));
+    expect(x('Pump'), lessThan(x('Breastfeed')));
+    expect(x('Breastfeed'), lessThan(x('Wet')));
+  });
+
   testWidgets('trends switch to months', (tester) async {
     await _startApp(tester);
     await tester.tap(find.text('Trends'));
