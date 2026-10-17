@@ -7,6 +7,7 @@ import '../models/summary.dart';
 import '../theme.dart';
 import '../widgets/app_logo.dart';
 import '../widgets/common.dart';
+import 'passport_screen.dart';
 
 /// The third tab: the baby's profile (photo, name, birth date), the app's
 /// appearance, and signing in and out.
@@ -31,6 +32,8 @@ class ProfileScreen extends StatelessWidget {
                 Text('Profile', style: Theme.of(context).textTheme.headlineMedium),
                 const SizedBox(height: 24),
                 _BabyCard(store: store),
+                const SizedBox(height: 12),
+                _PassportLink(store: store),
                 const SizedBox(height: 28),
                 const SectionLabel('Appearance'),
                 const SizedBox(height: 10),
@@ -403,6 +406,53 @@ class _SignInSheetState extends State<_SignInSheet> {
             child: const Text('Sign in'),
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// Opens the health passport.
+class _PassportLink extends StatelessWidget {
+  const _PassportLink({required this.store});
+
+  final EntryStore store;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: AppColors.surface,
+      borderRadius: BorderRadius.circular(AppRadius.card),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(AppRadius.card),
+        onTap: () => showPassport(context, store),
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(20, 16, 12, 16),
+          child: Row(
+            children: [
+              Container(
+                width: 44,
+                height: 44,
+                decoration: BoxDecoration(color: AppColors.selected, shape: BoxShape.circle),
+                child: Icon(Icons.health_and_safety_rounded, color: AppColors.onSelected),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Health passport', style: Theme.of(context).textTheme.titleMedium),
+                    Text(
+                      'Latest measurements, vaccines, medicines and daily averages to share with '
+                      'your doctor',
+                      style: TextStyle(fontSize: AppText.label, color: AppColors.muted),
+                    ),
+                  ],
+                ),
+              ),
+              Icon(Icons.chevron_right_rounded, color: AppColors.muted),
+            ],
+          ),
+        ),
       ),
     );
   }

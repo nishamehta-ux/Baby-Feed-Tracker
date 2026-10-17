@@ -4,6 +4,7 @@ import 'package:baby_feed_tracker/models/entry.dart';
 import 'package:baby_feed_tracker/screens/entry_sheet.dart';
 import 'package:baby_feed_tracker/theme.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -434,6 +435,42 @@ void main() {
     expect(x('Dirty'), lessThan(x('Pump')));
     expect(x('Pump'), lessThan(x('Breastfeed')));
     expect(x('Breastfeed'), lessThan(x('Wet')));
+  });
+
+  testWidgets('health passport opens from profile and copies its summary', (tester) async {
+    final store = await _startApp(tester);
+    final t = DateTime.now().subtract(const Duration(days: 2));
+    await store.upsert(
+        Entry(id: 'v', type: EntryType.other, start: t, end: t, title: 'Vaccine', value: 'BCG'));
+    await store.upsert(Entry(
+        id: 'w',
+        type: EntryType.other,
+        start: t,
+        end: t,
+        title: 'Weight',
+        value: '4.2',
+        unit: 'kg'));
+    await tester.pumpAndSettle();
+
+    String? copied;
+    tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(SystemChannels.platform,
+        (call) async {
+      if (call.method == 'Clipboard.setData') copied = (call.arguments as Map)['text'] as String;
+      return null;
+    });
+
+    await tester.tap(find.text('Profile'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Health passport'));
+    await tester.pumpAndSettle();
+    expect(find.text('BCG'), findsOneWidget);
+    expect(find.text('4.2 kg'), findsOneWidget);
+    expect(find.text('No medicines logged yet.'), findsOneWidget);
+
+    await tester.tap(find.text('Copy'));
+    await tester.pumpAndSettle();
+    expect(copied, contains('BCG'));
+    expect(find.text('Copied. Paste it into a message or email.'), findsOneWidget);
   });
 
   testWidgets('trends switch to months', (tester) async {
