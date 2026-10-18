@@ -151,52 +151,16 @@ class _TodayScreenState extends State<TodayScreen> {
   }
 
   /// A reminder of the next appointment when it's within the coming week,
-  /// and a prompt for visit notes after one that has just happened.
+  /// until it is dismissed.
   List<Widget> _buildNextAppointment(BuildContext context) {
     final now = DateTime.now();
-    final due = store.visitNotesDue(now);
     final next = store.nextAppointment(now);
-    return [
-      if (due != null) ...[
-        const SizedBox(height: 16),
-        Material(
-          color: AppColors.surface,
-          borderRadius: BorderRadius.circular(AppRadius.tile),
-          child: InkWell(
-            borderRadius: BorderRadius.circular(AppRadius.tile),
-            onTap: () => showAppointmentSheet(context, store, existing: due, writeVisitNotes: true),
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(14, 12, 10, 12),
-              child: Row(
-                children: [
-                  Icon(Icons.sticky_note_2_rounded, color: AppColors.primary, size: 22),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Text.rich(
-                      TextSpan(children: [
-                        TextSpan(
-                          text: 'How was the ${due.title}? ',
-                          style: const TextStyle(fontWeight: FontWeight.w700),
-                        ),
-                        TextSpan(
-                          text: 'Add visit notes',
-                          style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.w700),
-                        ),
-                      ]),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                  Icon(Icons.chevron_right_rounded, color: AppColors.muted, size: 20),
-                ],
-              ),
-            ),
-          ),
-        ),
-      ],
-      if (next != null && next.start.difference(now) <= const Duration(days: 7))
-        ..._nextAppointmentCard(context, next, now),
-    ];
+    if (next == null ||
+        next.start.difference(now) > const Duration(days: 7) ||
+        store.dismissedAppointment == next.id) {
+      return const [];
+    }
+    return _nextAppointmentCard(context, next, now);
   }
 
   List<Widget> _nextAppointmentCard(BuildContext context, Appointment next, DateTime now) {
@@ -209,7 +173,7 @@ class _TodayScreenState extends State<TodayScreen> {
           borderRadius: BorderRadius.circular(AppRadius.tile),
           onTap: widget.onOpenCalendar,
           child: Padding(
-            padding: const EdgeInsets.fromLTRB(14, 12, 10, 12),
+            padding: const EdgeInsets.fromLTRB(14, 6, 4, 6),
             child: Row(
               children: [
                 Icon(iconForAppointment(next.kind), color: AppColors.primary, size: 22),
@@ -231,7 +195,12 @@ class _TodayScreenState extends State<TodayScreen> {
                     maxLines: 2,
                   ),
                 ),
-                Icon(Icons.chevron_right_rounded, color: AppColors.muted, size: 20),
+                IconButton(
+                  tooltip: 'Dismiss',
+                  visualDensity: VisualDensity.compact,
+                  onPressed: () => store.dismissAppointment(next.id),
+                  icon: Icon(Icons.close_rounded, color: AppColors.muted, size: 20),
+                ),
               ],
             ),
           ),

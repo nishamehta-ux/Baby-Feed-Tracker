@@ -32,6 +32,7 @@ class EntryStore extends ChangeNotifier {
   static const _familyKey = 'family';
   static const _joinCodeKey = 'join_code';
   static const _appointmentsKey = 'appointments';
+  static const _dismissedKey = 'dismissed_appointment';
 
   SharedPreferences? _prefs;
   final List<Entry> _entries = [];
@@ -44,6 +45,7 @@ class EntryStore extends ChangeNotifier {
   final List<Caregiver> _family = [];
   String? _joinCode;
   final List<Appointment> _appointments = [];
+  String? _dismissedAppointment;
 
   List<Entry> get entries => List.unmodifiable(_entries);
   String get babyName => _babyName;
@@ -76,10 +78,20 @@ class EntryStore extends ChangeNotifier {
     return null;
   }
 
-  /// The most recent appointment of the last 3 days that has no visit notes
-  /// yet, to ask how it went; or null.
-  Appointment? visitNotesDue(DateTime now) {
-    final from = now.subtract(const Duration(days: 3));
+  /// The appointment whose reminder on Today was dismissed.
+  String? get dismissedAppointment => _dismissedAppointment;
+
+  /// Hides Today's reminder for appointment [id]; the next one still shows.
+  Future<void> dismissAppointment(String id) async {
+    _dismissedAppointment = id;
+    notifyListeners();
+    await _prefs?.setString(_dismissedKey, id);
+  }
+
+  /// The most recent appointment of the last [within] that has no visit
+  /// notes yet, to ask how it went; or null.
+  Appointment? visitNotesDue(DateTime now, {Duration within = const Duration(days: 14)}) {
+    final from = now.subtract(within);
     Appointment? due;
     for (final a in appointments) {
       if (a.start.isAfter(from) && a.start.isBefore(now) && a.visitNotes.trim().isEmpty) due = a;
@@ -132,6 +144,7 @@ class EntryStore extends ChangeNotifier {
           : (jsonDecode(family) as List<dynamic>)
               .map((e) => Caregiver.fromJson(e as Map<String, dynamic>)));
     _joinCode = _prefs!.getString(_joinCodeKey);
+    _dismissedAppointment = _prefs!.getString(_dismissedKey);
     final appointments = _prefs!.getString(_appointmentsKey);
     _appointments
       ..clear()

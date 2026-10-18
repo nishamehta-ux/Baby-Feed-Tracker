@@ -81,6 +81,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
         final onDay = all.where((a) => isSameDay(a.start, _selected)).toList();
         final upcoming = all.where((a) => !a.start.isBefore(dateOnly(now))).toList();
         final pastVisits = all.where((a) => a.isPast(now)).toList().reversed.toList();
+        final notesDue = store.visitNotesDue(now);
         return Scaffold(
           backgroundColor: Colors.transparent,
           floatingActionButton: FloatingActionButton.extended(
@@ -174,6 +175,11 @@ class _CalendarScreenState extends State<CalendarScreen> {
                       const SizedBox(height: 28),
                       const SectionLabel('Past visits'),
                       const SizedBox(height: 10),
+                      // A recent visit still without notes: ask how it went.
+                      if (notesDue != null) ...[
+                        _NotesReminder(appointment: notesDue, onTap: () => _open(notesDue, now)),
+                        const SizedBox(height: 10),
+                      ],
                       AppCard(
                         child: Column(
                           children: [
@@ -195,6 +201,50 @@ class _CalendarScreenState extends State<CalendarScreen> {
           ),
         );
       },
+    );
+  }
+}
+
+class _NotesReminder extends StatelessWidget {
+  const _NotesReminder({required this.appointment, required this.onTap});
+
+  final Appointment appointment;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: AppColors.selected,
+      borderRadius: BorderRadius.circular(AppRadius.tile),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(AppRadius.tile),
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 14, 10, 14),
+          child: Row(
+            children: [
+              Icon(Icons.sticky_note_2_rounded, color: AppColors.onSelected, size: 22),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'How was the ${appointment.title}?',
+                      style: TextStyle(fontWeight: FontWeight.w700, color: AppColors.onSelected),
+                    ),
+                    Text(
+                      'Add visit notes while you remember what was said.',
+                      style: TextStyle(fontSize: AppText.label, color: AppColors.onSelected),
+                    ),
+                  ],
+                ),
+              ),
+              Icon(Icons.chevron_right_rounded, color: AppColors.onSelected, size: 20),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }

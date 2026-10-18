@@ -593,7 +593,16 @@ void main() {
     expect(find.textContaining('in 3 days', findRichText: true), findsOneWidget);
     expect(find.textContaining('Far away', findRichText: true), findsNothing);
 
-    await tester.tap(find.textContaining('2-month check-up', findRichText: true));
+    // Dismissing hides it, and it stays hidden after a restart.
+    await tester.tap(find.byTooltip('Dismiss'));
+    await tester.pumpAndSettle();
+    expect(find.textContaining('2-month check-up', findRichText: true), findsNothing);
+    final reloaded = EntryStore();
+    await reloaded.load();
+    expect(reloaded.dismissedAppointment, 'a');
+
+    // The calendar still has it.
+    await tester.tap(find.text('Calendar'));
     await tester.pumpAndSettle();
     expect(find.text('NEXT UP'), findsOneWidget);
   });
@@ -610,9 +619,13 @@ void main() {
     ));
     await tester.pumpAndSettle();
 
-    // Today asks how it went and opens straight into the notes.
-    final ask = find.textContaining('How was the 6-week check?', findRichText: true);
-    expect(ask, findsOneWidget);
+    // Today stays clean; the calendar's past visits ask how it went.
+    final ask = find.text('How was the 6-week check?');
+    expect(ask, findsNothing);
+    await tester.tap(find.text('Calendar'));
+    await tester.pumpAndSettle();
+    await tester.ensureVisible(ask);
+    await tester.pumpAndSettle();
     await tester.tap(ask);
     await tester.pumpAndSettle();
     expect(find.text('Visit notes'), findsOneWidget);
@@ -625,8 +638,6 @@ void main() {
     expect(ask, findsNothing);
 
     // The calendar's past visits show the notes.
-    await tester.tap(find.text('Calendar'));
-    await tester.pumpAndSettle();
     final notes = find.text('Gaining well. Start tummy time twice a day.');
     await tester.ensureVisible(notes.last);
     expect(notes, findsWidgets);
