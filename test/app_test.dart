@@ -660,6 +660,29 @@ void main() {
     expect(recent, findsOneWidget);
   });
 
+  testWidgets('breastfeeding total time can be entered by hand', (tester) async {
+    final store = await _startApp(tester);
+    await _openAdd(tester, 'Breastfeeding');
+    // Ended on right, then type the total.
+    await tester.tap(find.text('Right').last);
+    await tester.pump();
+    final total = find.text('Total time');
+    await tester.ensureVisible(total);
+    await tester.pumpAndSettle();
+    await tester.tap(total);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('15 min'));
+    await tester.pump();
+    await tester.tap(find.text('Done'));
+    await tester.pumpAndSettle();
+    expect(find.text('15 m'), findsOneWidget);
+    await tester.tap(find.text('Save'));
+    await tester.pumpAndSettle();
+    final e = store.entries.single;
+    expect((e.breastDuration, e.rightDuration, e.endSide),
+        (const Duration(minutes: 15), const Duration(minutes: 15), BreastSide.right));
+  });
+
   testWidgets('trends switch to months', (tester) async {
     await _startApp(tester);
     await tester.tap(find.text('Trends'));

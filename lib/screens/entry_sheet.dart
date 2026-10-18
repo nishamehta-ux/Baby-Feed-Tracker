@@ -273,6 +273,21 @@ class _EntrySheetState extends State<EntrySheet> {
     });
   }
 
+  /// Sets the whole feed's length at once, credited to the side it ended on
+  /// (left when none is chosen yet).
+  Future<void> _editTotal() async {
+    if (_activeSide != null) _toggleSide(_activeSide!); // pause before editing
+    final picked = await _pickDuration('Total time', _breastTotal);
+    if (picked == null || !mounted) return;
+    setState(() {
+      _error = null;
+      final side = _endSide ?? BreastSide.left;
+      _endSide = side;
+      _left = side == BreastSide.left ? picked : Duration.zero;
+      _right = side == BreastSide.right ? picked : Duration.zero;
+    });
+  }
+
   Future<void> _editSide(BreastSide side) async {
     if (_activeSide == side) _toggleSide(side); // pause before editing
     final name = side == BreastSide.left ? 'Left' : 'Right';
@@ -797,11 +812,20 @@ class _EntrySheetState extends State<EntrySheet> {
         ),
       ),
       _timeRow('Start time'),
+      // Tap to type the whole feed's length instead of timing each side.
       _FormRow(
         label: 'Total time',
-        trailing: _RowValue(
-          _breastTotal == Duration.zero ? '0 m' : formatDuration(_breastTotal),
-          muted: _breastTotal == Duration.zero,
+        onTap: _editTotal,
+        trailing: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            _RowValue(
+              _breastTotal == Duration.zero ? 'Add' : formatDuration(_breastTotal),
+              muted: _breastTotal == Duration.zero,
+            ),
+            const SizedBox(width: 4),
+            Icon(Icons.edit_rounded, size: 18, color: AppColors.muted),
+          ],
         ),
       ),
     ];

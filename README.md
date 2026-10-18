@@ -8,7 +8,7 @@ A simple Flutter app for logging a baby's feeds, pumping, diapers, routines and 
 
 - **Logging happens in drawers.** *Add an entry* opens a drawer to pick what to log; each kind opens a tall drawer with Close, the title and Save at the top, in its own colour.
   - Every drawer saves from a full-width **Save** button at the bottom of the form. Times are picked in one step (day and time on one wheel, with *Now*), durations on an hours-and-minutes wheel with quick picks (5 min … 1 h), and amounts in ml can be typed or stepped with − / +.
-  - **Breastfeeding**: start, pause or switch the left and right timers, or tap the pencil to type a side's time. A "Last side" tag marks where the previous feed ended. *Ended on* fills in from the last timer used.
+  - **Breastfeeding**: start, pause or switch the left and right timers, or tap the pencil to type a side's time. Or tap *Total time* to enter the whole feed's length at once (it counts towards the side under *Ended on*, left if none). A "Last side" tag marks where the previous feed ended. *Ended on* fills in from the last timer used.
   - **Bottle feeding**: pick **breast milk** or **formula**, set the amount with −/+ (10 ml steps) or by typing, or tap **Yes** to reuse the last amount.
   - **Pumping**: a timer, and the amount per side or in total (5 ml steps).
   - **Diaper**: wet, dirty (both together allowed) or dry, and a diaper-rash switch.
