@@ -66,8 +66,11 @@ void main() {
         await tester.pump(const Duration(seconds: 2));
       }
       // Pick a new start time: day and time in one step.
-      await tester.tap(
-          find.text('Start time').evaluate().isEmpty ? find.text('Time') : find.text('Start time'));
+      final start =
+          find.text('Start time').evaluate().isEmpty ? find.text('Time') : find.text('Start time');
+      await tester.ensureVisible(start);
+      await tester.pumpAndSettle();
+      await tester.tap(start);
       await tester.pumpAndSettle();
       await tester.tap(find.text('Now'));
       await tester.pumpAndSettle();

@@ -281,6 +281,7 @@ class _EntrySheetState extends State<EntrySheet> {
     if (picked == null || !mounted) return;
     setState(() {
       _error = null;
+      _endNowIfUntouched(picked);
       final side = _endSide ?? BreastSide.left;
       _endSide = side;
       _left = side == BreastSide.left ? picked : Duration.zero;
@@ -325,11 +326,22 @@ class _EntrySheetState extends State<EntrySheet> {
     });
   }
 
+  /// Sets the length by hand, from the timer's pencil or the Total time row.
   Future<void> _editTimer() async {
     if (_timerSince != null) _toggleTimer();
-    final picked =
-        await _pickDuration(_type == EntryType.pump ? 'Pumping time' : 'How long', _timerTime);
-    if (picked != null) setState(() => _timerTime = picked);
+    final picked = await _pickDuration('Total time', _timerTime);
+    if (picked == null || !mounted) return;
+    setState(() {
+      _error = null;
+      _endNowIfUntouched(picked);
+      _timerTime = picked;
+    });
+  }
+
+  /// A length typed in for a new entry, with no start time chosen, is for
+  /// something that just ended: start it that long ago.
+  void _endNowIfUntouched(Duration length) {
+    if (!_startEdited) _start = DateTime.now().subtract(length);
   }
 
   /// Sets the duration from an end time picked for routines and Other.
@@ -763,6 +775,23 @@ class _EntrySheetState extends State<EntrySheet> {
     );
   }
 
+  /// Total time on its own: tap to type it, no timer or end time needed.
+  Widget _totalRow(Duration total, VoidCallback onTap) => _FormRow(
+        label: 'Total time',
+        onTap: onTap,
+        trailing: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            _RowValue(
+              total == Duration.zero ? 'Add' : formatDuration(total),
+              muted: total == Duration.zero,
+            ),
+            const SizedBox(width: 4),
+            Icon(Icons.edit_rounded, size: 18, color: AppColors.muted),
+          ],
+        ),
+      );
+
   Widget _timeRow([String label = 'Time']) => _FormRow(
         label: label,
         onTap: _pickStart,
@@ -811,23 +840,9 @@ class _EntrySheetState extends State<EntrySheet> {
           ],
         ),
       ),
-      _timeRow('Start time'),
       // Tap to type the whole feed's length instead of timing each side.
-      _FormRow(
-        label: 'Total time',
-        onTap: _editTotal,
-        trailing: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            _RowValue(
-              _breastTotal == Duration.zero ? 'Add' : formatDuration(_breastTotal),
-              muted: _breastTotal == Duration.zero,
-            ),
-            const SizedBox(width: 4),
-            Icon(Icons.edit_rounded, size: 18, color: AppColors.muted),
-          ],
-        ),
-      ),
+      _totalRow(_breastTotal, _editTotal),
+      _timeRow('Start time'),
     ];
   }
 
@@ -909,6 +924,7 @@ class _EntrySheetState extends State<EntrySheet> {
           onEdit: _editTimer,
         ),
       ),
+      _totalRow(_timerElapsed, _editTimer),
       _timeRow('Start time'),
       _FormRow(
         label: 'Amount',
@@ -985,7 +1001,8 @@ class _EntrySheetState extends State<EntrySheet> {
     ];
   }
 
-  /// For routines and Other: an optional timer, and the end time it implies.
+  /// For routines and Other: an optional timer, or the total time typed in,
+  /// and the end time it implies.
   List<Widget> _durationFields() {
     final duration = _timerElapsed;
     return [
@@ -1000,13 +1017,14 @@ class _EntrySheetState extends State<EntrySheet> {
           onEdit: _editTimer,
         ),
       ),
+      _totalRow(duration, _editTimer),
       _timeRow('Start time'),
       _FormRow(
         label: 'End time',
         onTap: _pickEnd,
         trailing: duration == Duration.zero
             ? const _RowValue('Add', muted: true)
-            : _RowValue('${_dayAndTime(_start.add(duration))} · ${formatDuration(duration)}'),
+            : _RowValue(_dayAndTime(_start.add(duration))),
       ),
     ];
   }

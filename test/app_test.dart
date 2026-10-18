@@ -684,6 +684,29 @@ void main() {
         (const Duration(minutes: 15), const Duration(minutes: 15), BreastSide.right));
   });
 
+  testWidgets('routine total time can be entered without start or end', (tester) async {
+    final store = await _startApp(tester);
+    await _openAdd(tester, 'Routine');
+    await tester.tap(find.text('Sleep'));
+    await tester.pump();
+    final total = find.text('Total time');
+    await tester.ensureVisible(total);
+    await tester.pumpAndSettle();
+    await tester.tap(total);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('15 min'));
+    await tester.pump();
+    await tester.tap(find.text('Done'));
+    await tester.pumpAndSettle();
+    expect(find.text('15 m'), findsOneWidget);
+    await tester.tap(find.text('Save'));
+    await tester.pumpAndSettle();
+    final e = store.entries.single;
+    expect(e.duration, const Duration(minutes: 15));
+    // It just ended, so it doesn't end in the future.
+    expect(e.end.isAfter(DateTime.now()), isFalse);
+  });
+
   testWidgets('trends switch to months', (tester) async {
     await _startApp(tester);
     await tester.tap(find.text('Trends'));
