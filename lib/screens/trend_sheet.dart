@@ -8,7 +8,7 @@ import '../widgets/trend_chart.dart';
 
 /// Opens a drawer with the full chart of one trend and every value in it.
 ///
-/// [rowLabel] names each point in the list ("Week of 5 Oct", "Mon 13 Oct").
+/// [rowLabel] names each point in the list ("7 days to 14 Oct", "Mon 13 Oct").
 Future<void> showTrendSheet(
   BuildContext context, {
   required String title,

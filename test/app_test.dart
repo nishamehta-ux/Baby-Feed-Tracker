@@ -9,6 +9,7 @@ import 'package:baby_feed_tracker/theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 Future<EntryStore> _startApp(WidgetTester tester) async {
@@ -687,7 +688,16 @@ void main() {
     await _startApp(tester);
     await tester.tap(find.text('Trends'));
     await tester.pumpAndSettle();
-    expect(find.text('This week'), findsOneWidget);
+    expect(find.text('Last 7 days'), findsOneWidget);
+
+    // A rolling window: back 7 days at a time, not to a calendar week.
+    await tester.tap(find.byTooltip('Previous 7 days'));
+    await tester.pumpAndSettle();
+    final ago = DateTime.now().subtract(const Duration(days: 7));
+    expect(find.text('7 days to ${DateFormat('d MMM').format(ago)}'), findsOneWidget);
+    await tester.tap(find.byTooltip('Next 7 days'));
+    await tester.pumpAndSettle();
+    expect(find.text('Last 7 days'), findsOneWidget);
 
     await tester.tap(find.text('Month'));
     await tester.pumpAndSettle();
@@ -698,5 +708,12 @@ void main() {
     await tester.tap(find.byTooltip('Previous month'));
     await tester.pumpAndSettle();
     expect(find.text('This month'), findsNothing);
+
+    // Back to 7 days: the 7 days up to the end of the month on screen.
+    await tester.tap(find.text('7 days'));
+    await tester.pumpAndSettle();
+    final now = DateTime.now();
+    final endOfLastMonth = DateTime(now.year, now.month, 0);
+    expect(find.text('7 days to ${DateFormat('d MMM').format(endOfLastMonth)}'), findsOneWidget);
   });
 }

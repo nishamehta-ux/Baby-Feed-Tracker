@@ -15,7 +15,7 @@ import 'trend_sheet.dart';
 
 enum Period { week, month }
 
-/// Trends for a week or a month (any number of them back): the average per
+/// Trends for the last 7 days or a month (any number of them back): the average per
 /// day of feeds, pumping and diapers, how often each routine happened, and
 /// every numeric measurement (weight, temperature…), each with a small line
 /// of recent periods and a full chart on tap; then a list of the days.
@@ -40,10 +40,14 @@ class _TrendsScreenState extends State<TrendsScreen> {
 
   /// How many periods the small lines and charts cover.
   int get _span => _isWeek ? 8 : 6;
-  String get _unit => _isWeek ? 'week' : 'month';
 
+  /// The period before, in phrases: "Up 4% on the 7 days before".
+  String get _before => _isWeek ? 'the 7 days before' : 'last month';
+
+  /// "Week" is a rolling seven days: the window that ends on [d] (today and
+  /// the six days before, for the current one), not a calendar week.
   DateTime _startOf(DateTime d) =>
-      _period == Period.week ? startOfWeek(d) : DateTime(d.year, d.month);
+      _period == Period.week ? DateTime(d.year, d.month, d.day - 6) : DateTime(d.year, d.month);
 
   /// The start of the period [n] periods after the one starting at [start].
   DateTime _plus(DateTime start, int n) => _isWeek
@@ -53,10 +57,11 @@ class _TrendsScreenState extends State<TrendsScreen> {
   int _daysIn(DateTime start) => _plus(start, 1).difference(start).inDays;
 
   void _setPeriod(Period p) => setState(() {
+        // Keep the same moment in view: the period holding the old one's last
+        // day (today, for the current one).
+        final last = _plus(_start, 1).subtract(const Duration(days: 1));
+        final anchor = last.isAfter(_today) ? _today : last;
         _period = p;
-        // Keep the same moment in view: the period that holds the old start,
-        // or today when that is the current one.
-        final anchor = _start == _startOf(_today) ? _today : _start;
         _start = _startOf(anchor);
       });
 
@@ -70,10 +75,14 @@ class _TrendsScreenState extends State<TrendsScreen> {
     );
     final picked = await showDatePicker(
       context: context,
-      initialDate: _start.isAfter(_today) ? _today : _start,
+      initialDate: _isWeek
+          ? (_plus(_start, 1).subtract(const Duration(days: 1)).isAfter(_today)
+              ? _today
+              : _plus(_start, 1).subtract(const Duration(days: 1)))
+          : (_start.isAfter(_today) ? _today : _start),
       firstDate: first,
       lastDate: _today,
-      helpText: _isWeek ? 'Go to the week of' : 'Go to the month of',
+      helpText: _isWeek ? 'Show the 7 days up to' : 'Go to the month of',
     );
     if (picked != null) setState(() => _start = _startOf(picked));
   }
@@ -102,7 +111,7 @@ class _TrendsScreenState extends State<TrendsScreen> {
 
   String get _title {
     final current = _start == _startOf(_today);
-    if (_isWeek) return current ? 'This week' : 'Week of ${DateFormat('d MMM').format(_start)}';
+    if (_isWeek) return current ? 'Last 7 days' : _periodLabel(_start);
     return current ? 'This month' : DateFormat('MMMM yyyy').format(_start);
   }
 
@@ -112,9 +121,9 @@ class _TrendsScreenState extends State<TrendsScreen> {
     return '${startFmt.format(_start)} – ${DateFormat('d MMM yyyy').format(end)}';
   }
 
-  /// "Week of 5 Oct" or "October 2026", for chart lists.
+  /// "7 days to 14 Oct" or "October 2026", for titles and chart lists.
   String _periodLabel(DateTime start) => _isWeek
-      ? 'Week of ${DateFormat('d MMM').format(start)}'
+      ? '7 days to ${DateFormat('d MMM').format(_plus(start, 1).subtract(const Duration(days: 1)))}'
       : DateFormat('MMMM yyyy').format(start);
 
   @override
@@ -145,7 +154,7 @@ class _TrendsScreenState extends State<TrendsScreen> {
                         side: BorderSide(color: AppColors.surface),
                       ),
                       segments: const [
-                        ButtonSegment(value: Period.week, label: Text('Week')),
+                        ButtonSegment(value: Period.week, label: Text('7 days')),
                         ButtonSegment(value: Period.month, label: Text('Month')),
                       ],
                       selected: {_period},
@@ -206,7 +215,7 @@ class _TrendsScreenState extends State<TrendsScreen> {
         name: name,
         value: format(current.of(measure)),
         detail: previous.isEmpty
-            ? 'Nothing logged last $_unit'
+            ? 'Nothing logged in $_before'
             : _change(current.of(measure), previous.of(measure)),
         trend: [for (final w in history) w.isEmpty ? null : w.of(measure)],
         onTap: points.isEmpty
@@ -214,7 +223,9 @@ class _TrendsScreenState extends State<TrendsScreen> {
             : () => showTrendSheet(
                   context,
                   title: name,
-                  subtitle: 'Average per day for each of the last $_span ${_unit}s',
+                  subtitle: _isWeek
+                      ? 'Average per day, 7 days at a time, over the last $_span weeks'
+                      : 'Average per day for each of the last $_span months',
                   type: type,
                   icon: icon,
                   points: points,
@@ -247,7 +258,7 @@ class _TrendsScreenState extends State<TrendsScreen> {
         name: name,
         value: perDay(values.last),
         detail: values[values.length - 2] <= 0 && values.last <= 0
-            ? 'Nothing logged last $_unit'
+            ? 'Nothing logged in $_before'
             : _change(values.last, values[values.length - 2]),
         trend: [for (var i = 0; i < values.length; i++) first < 0 || i < first ? null : values[i]],
         onTap: first < 0
@@ -255,7 +266,9 @@ class _TrendsScreenState extends State<TrendsScreen> {
             : () => showTrendSheet(
                   context,
                   title: name,
-                  subtitle: 'Average time a day for each of the last $_span ${_unit}s',
+                  subtitle: _isWeek
+                      ? 'Average time a day, 7 days at a time, over the last $_span weeks'
+                      : 'Average time a day for each of the last $_span months',
                   type: EntryType.routine,
                   icon: icon,
                   points: [
@@ -280,15 +293,17 @@ class _TrendsScreenState extends State<TrendsScreen> {
       final counts = [for (final s in starts) countIn(s)];
       final first = counts.indexWhere((c) => c > 0);
       final now = counts.last, before = counts[counts.length - 2];
-      // The period in progress would dip the line, so it shows finished ones.
-      final lineCount = isCurrent ? counts.length - 1 : counts.length;
+      // A month in progress would dip the line, so it shows finished ones; a
+      // rolling 7 days is always whole.
+      final partial = isCurrent && !_isWeek;
+      final lineCount = partial ? counts.length - 1 : counts.length;
       return _TrendRow(
         type: EntryType.routine,
         icon: icon,
         name: name,
-        value: '${times(now.toDouble())}${isCurrent ? ' so far' : ''}',
-        detail: isCurrent
-            ? '${times(before.toDouble())} last $_unit'
+        value: '${times(now.toDouble())}${partial ? ' so far' : ''}',
+        detail: partial
+            ? '${times(before.toDouble())} last month'
             : _change(now.toDouble(), before.toDouble()),
         trend: [
           for (var i = 0; i < lineCount; i++) first < 0 || i < first ? null : counts[i].toDouble(),
@@ -298,7 +313,9 @@ class _TrendsScreenState extends State<TrendsScreen> {
             : () => showTrendSheet(
                   context,
                   title: name,
-                  subtitle: 'Times per $_unit for each of the last $_span ${_unit}s',
+                  subtitle: _isWeek
+                      ? 'Times in each 7 days over the last $_span weeks'
+                      : 'Times per month for each of the last $_span months',
                   type: EntryType.routine,
                   icon: icon,
                   points: [
@@ -307,7 +324,7 @@ class _TrendsScreenState extends State<TrendsScreen> {
                   ],
                   format: times,
                   rowLabel: (p) =>
-                      '${_periodLabel(p.at)}${isCurrent && p.at == start ? ' (so far)' : ''}',
+                      '${_periodLabel(p.at)}${partial && p.at == start ? ' (so far)' : ''}',
                 ),
       );
     }
@@ -388,13 +405,13 @@ class _TrendsScreenState extends State<TrendsScreen> {
               ),
               RoundIconButton(
                 icon: Icons.chevron_left_rounded,
-                tooltip: 'Previous $_unit',
+                tooltip: _isWeek ? 'Previous 7 days' : 'Previous month',
                 onPressed: () => _shift(-1),
               ),
               const SizedBox(width: 4),
               RoundIconButton(
                 icon: Icons.chevron_right_rounded,
-                tooltip: 'Next $_unit',
+                tooltip: _isWeek ? 'Next 7 days' : 'Next month',
                 onPressed: isCurrent ? null : () => _shift(1),
               ),
             ],
@@ -416,16 +433,20 @@ class _TrendsScreenState extends State<TrendsScreen> {
           row(EntryType.diaper, 'Diapers', (t) => t.diaperCount.toDouble(), _perDay),
           const SizedBox(height: 4),
           Text(
-            'The small lines show the last $_span ${_unit}s. Tap a row for its chart.',
+            _isWeek
+                ? 'The small lines show the last $_span weeks, 7 days at a time. Tap a row for its chart.'
+                : 'The small lines show the last $_span months. Tap a row for its chart.',
             style: TextStyle(color: AppColors.muted, fontSize: AppText.label),
           ),
           if (routines.isNotEmpty) ...[
             const SizedBox(height: 24),
             Text('Routines', style: Theme.of(context).textTheme.titleMedium),
             Text(
-              isCurrent
-                  ? 'Times this $_unit so far, or for timed ones like sleep, time a day.'
-                  : 'Times that $_unit, or for timed ones, time a day.',
+              _isWeek
+                  ? 'Times in these 7 days, or for timed ones like sleep, time a day.'
+                  : isCurrent
+                      ? 'Times this month so far, or for timed ones like sleep, time a day.'
+                      : 'Times that month, or for timed ones, time a day.',
               style: TextStyle(color: AppColors.muted, fontSize: AppText.label),
             ),
             const SizedBox(height: 8),
@@ -468,10 +489,10 @@ class _TrendsScreenState extends State<TrendsScreen> {
   }
 
   String _change(double now, double before) {
-    if (before <= 0) return now > 0 ? 'New this $_unit' : 'Same as last $_unit';
+    if (before <= 0) return now > 0 ? 'New, none in $_before' : 'Same as $_before';
     final pct = ((now - before) / before * 100).round();
-    if (pct == 0) return 'Same as last $_unit';
-    return pct > 0 ? 'Up $pct% on last $_unit' : 'Down ${-pct}% on last $_unit';
+    if (pct == 0) return 'Same as $_before';
+    return pct > 0 ? 'Up $pct% on $_before' : 'Down ${-pct}% on $_before';
   }
 }
 
