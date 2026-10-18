@@ -619,15 +619,19 @@ void main() {
     ));
     await tester.pumpAndSettle();
 
-    // Today stays clean; the calendar's past visits ask how it went.
-    final ask = find.text('How was the 6-week check?');
-    expect(ask, findsNothing);
+    // Today stays clean; the visit's row in the calendar invites notes.
     await tester.tap(find.text('Calendar'));
     await tester.pumpAndSettle();
-    await tester.ensureVisible(ask);
+    final add = find.text('Add visit notes').last;
+    await tester.ensureVisible(add);
     await tester.pumpAndSettle();
-    await tester.tap(ask);
+    await tester.tap(add);
     await tester.pumpAndSettle();
+    // Notes come before the appointment's details.
+    expect(
+      tester.getTopLeft(find.text('Visit notes')).dy,
+      lessThan(tester.getTopLeft(find.text('Appointment details')).dy),
+    );
     expect(find.text('Visit notes'), findsOneWidget);
     await tester.enterText(
         find.widgetWithText(TextField, 'e.g. Weight on track. Next vaccines at 12 weeks.'),
@@ -635,13 +639,13 @@ void main() {
     await tester.tap(find.text('Save changes'));
     await tester.pumpAndSettle();
     expect(store.appointments.single.visitNotes, 'Gaining well. Start tummy time twice a day.');
-    expect(ask, findsNothing);
 
-    // The calendar's past visits show the notes.
+    // The calendar's past visits show the notes instead of the prompt.
     final notes = find.text('Gaining well. Start tummy time twice a day.');
     await tester.ensureVisible(notes.last);
     expect(notes, findsWidgets);
     expect(find.text('PAST VISITS'), findsOneWidget);
+    expect(find.text('Add visit notes'), findsNothing);
 
     // And so does the health passport.
     await tester.tap(find.text('Profile'));

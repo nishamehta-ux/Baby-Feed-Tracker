@@ -81,7 +81,6 @@ class _CalendarScreenState extends State<CalendarScreen> {
         final onDay = all.where((a) => isSameDay(a.start, _selected)).toList();
         final upcoming = all.where((a) => !a.start.isBefore(dateOnly(now))).toList();
         final pastVisits = all.where((a) => a.isPast(now)).toList().reversed.toList();
-        final notesDue = store.visitNotesDue(now);
         return Scaffold(
           backgroundColor: Colors.transparent,
           floatingActionButton: FloatingActionButton.extended(
@@ -175,21 +174,11 @@ class _CalendarScreenState extends State<CalendarScreen> {
                       const SizedBox(height: 28),
                       const SectionLabel('Past visits'),
                       const SizedBox(height: 10),
-                      // A recent visit still without notes: ask how it went.
-                      if (notesDue != null) ...[
-                        _NotesReminder(appointment: notesDue, onTap: () => _open(notesDue, now)),
-                        const SizedBox(height: 10),
-                      ],
                       AppCard(
                         child: Column(
                           children: [
                             for (final a in pastVisits.take(20))
-                              _AppointmentTile(
-                                appointment: a,
-                                now: now,
-                                showDay: true,
-                                onTap: () => _open(a, now),
-                              ),
+                              _PastVisitTile(appointment: a, onTap: () => _open(a, now)),
                           ],
                         ),
                       ),
@@ -205,44 +194,73 @@ class _CalendarScreenState extends State<CalendarScreen> {
   }
 }
 
-class _NotesReminder extends StatelessWidget {
-  const _NotesReminder({required this.appointment, required this.onTap});
+/// A past appointment, led by what was said there; the details come after.
+class _PastVisitTile extends StatelessWidget {
+  const _PastVisitTile({required this.appointment, required this.onTap});
 
   final Appointment appointment;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    return Material(
-      color: AppColors.selected,
-      borderRadius: BorderRadius.circular(AppRadius.tile),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(AppRadius.tile),
-        onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(16, 14, 10, 14),
-          child: Row(
-            children: [
-              Icon(Icons.sticky_note_2_rounded, color: AppColors.onSelected, size: 22),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
+    final a = appointment;
+    final notes = a.visitNotes.trim();
+    return InkWell(
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 12),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.baseline,
+                    textBaseline: TextBaseline.alphabetic,
+                    children: [
+                      Expanded(
+                        child: Text(
+                          a.title,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(fontWeight: FontWeight.w700),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        DateFormat('d MMM').format(a.start),
+                        style: TextStyle(fontSize: AppText.label, color: AppColors.muted),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 6),
+                  if (notes.isNotEmpty)
                     Text(
-                      'How was the ${appointment.title}?',
-                      style: TextStyle(fontWeight: FontWeight.w700, color: AppColors.onSelected),
+                      notes,
+                      maxLines: 4,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(fontSize: AppText.body, height: 1.35, color: AppColors.ink),
+                    )
+                  else
+                    Text(
+                      'Add visit notes',
+                      style: TextStyle(fontWeight: FontWeight.w700, color: AppColors.primary),
                     ),
+                  if (a.withWhom.isNotEmpty || a.place.isNotEmpty) ...[
+                    const SizedBox(height: 6),
                     Text(
-                      'Add visit notes while you remember what was said.',
-                      style: TextStyle(fontSize: AppText.label, color: AppColors.onSelected),
+                      [a.withWhom, a.place].where((s) => s.isNotEmpty).join(' · '),
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(fontSize: AppText.label, color: AppColors.muted),
                     ),
                   ],
-                ),
+                ],
               ),
-              Icon(Icons.chevron_right_rounded, color: AppColors.onSelected, size: 20),
-            ],
-          ),
+            ),
+            const SizedBox(width: 4),
+            Icon(Icons.chevron_right_rounded, color: AppColors.muted, size: 20),
+          ],
         ),
       ),
     );
@@ -726,6 +744,7 @@ class _AppointmentSheetState extends State<_AppointmentSheet> {
     TextEditingController c, {
     String? hint,
     int maxLines = 1,
+    int? minLines,
     bool autofocus = false,
   }) {
     return Padding(
@@ -733,7 +752,7 @@ class _AppointmentSheetState extends State<_AppointmentSheet> {
       child: TextField(
         controller: c,
         autofocus: autofocus,
-        minLines: maxLines > 1 ? 2 : 1,
+        minLines: minLines ?? (maxLines > 1 ? 2 : 1),
         maxLines: maxLines,
         textCapitalization: TextCapitalization.sentences,
         decoration: InputDecoration(labelText: label.isEmpty ? null : label, hintText: hint),
@@ -746,7 +765,7 @@ class _AppointmentSheetState extends State<_AppointmentSheet> {
   Widget build(BuildContext context) {
     final past = _start.isBefore(DateTime.now());
     final visitNotes = Container(
-      margin: const EdgeInsets.fromLTRB(20, 12, 20, 8),
+      margin: EdgeInsets.fromLTRB(20, past ? 20 : 12, 20, 8),
       padding: const EdgeInsets.fromLTRB(4, 8, 4, 8),
       decoration: BoxDecoration(
         color: AppColors.field,
@@ -776,7 +795,8 @@ class _AppointmentSheetState extends State<_AppointmentSheet> {
           ),
           _field('', _visit,
               hint: 'e.g. Weight on track. Next vaccines at 12 weeks.',
-              maxLines: 8,
+              minLines: past ? 4 : 2,
+              maxLines: 10,
               autofocus: widget.writeVisitNotes),
         ],
       ),
@@ -827,58 +847,68 @@ class _AppointmentSheetState extends State<_AppointmentSheet> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      Padding(
-                        padding: const EdgeInsets.fromLTRB(20, 20, 20, 8),
-                        child: Wrap(
-                          spacing: 8,
-                          runSpacing: 8,
-                          children: [
-                            for (final k in AppointmentKind.values)
-                              ChoiceChip(
-                                avatar: Icon(iconForAppointment(k), size: 18),
-                                label: Text(k.label),
-                                selected: _kind == k,
-                                showCheckmark: false,
-                                selectedColor: AppColors.selected,
-                                onSelected: (_) => setState(() {
-                                  _kind = k;
-                                  // Follow the kind until a title has been typed.
-                                  if (!_titleEdited) _title.text = k.label;
-                                }),
-                              ),
-                          ],
+                      // After the visit, what was said matters most: notes first,
+                      // then the appointment's details. Before it, details lead.
+                      if (past) ...[
+                        visitNotes,
+                        Padding(
+                          padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
+                          child: Text('Appointment details',
+                              style: Theme.of(context).textTheme.titleMedium),
                         ),
-                      ),
-                      _field('What', _title, hint: 'e.g. 2-month check-up'),
-                      InkWell(
-                        onTap: _pickWhen,
-                        child: Padding(
-                          padding: const EdgeInsets.fromLTRB(20, 16, 20, 16),
-                          child: Row(
+                      ],
+                      ...[
+                        Padding(
+                          padding: const EdgeInsets.fromLTRB(20, 20, 20, 8),
+                          child: Wrap(
+                            spacing: 8,
+                            runSpacing: 8,
                             children: [
-                              Text('When', style: const TextStyle(fontWeight: FontWeight.w700)),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                child: Text(
-                                  DateFormat('EEE d MMM yyyy · HH:mm').format(_start),
-                                  textAlign: TextAlign.right,
-                                  overflow: TextOverflow.ellipsis,
-                                  style:
-                                      TextStyle(color: AppColors.ink, fontWeight: FontWeight.w600),
+                              for (final k in AppointmentKind.values)
+                                ChoiceChip(
+                                  avatar: Icon(iconForAppointment(k), size: 18),
+                                  label: Text(k.label),
+                                  selected: _kind == k,
+                                  showCheckmark: false,
+                                  selectedColor: AppColors.selected,
+                                  onSelected: (_) => setState(() {
+                                    _kind = k;
+                                    // Follow the kind until a title has been typed.
+                                    if (!_titleEdited) _title.text = k.label;
+                                  }),
                                 ),
-                              ),
-                              const SizedBox(width: 4),
-                              Icon(Icons.chevron_right_rounded, color: AppColors.muted, size: 20),
                             ],
                           ),
                         ),
-                      ),
-                      _field('With', _with, hint: 'e.g. Dr Patel, health visitor'),
-                      _field('Where', _place, hint: 'e.g. Riverside clinic'),
-                      // After the visit, its notes come first; before, they wait at the end.
-                      if (past) visitNotes,
-                      _field('To ask or bring', _notes,
-                          hint: 'Questions to ask, what to bring', maxLines: 3),
+                        _field('What', _title, hint: 'e.g. 2-month check-up'),
+                        InkWell(
+                          onTap: _pickWhen,
+                          child: Padding(
+                            padding: const EdgeInsets.fromLTRB(20, 16, 20, 16),
+                            child: Row(
+                              children: [
+                                Text('When', style: const TextStyle(fontWeight: FontWeight.w700)),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: Text(
+                                    DateFormat('EEE d MMM yyyy · HH:mm').format(_start),
+                                    textAlign: TextAlign.right,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: TextStyle(
+                                        color: AppColors.ink, fontWeight: FontWeight.w600),
+                                  ),
+                                ),
+                                const SizedBox(width: 4),
+                                Icon(Icons.chevron_right_rounded, color: AppColors.muted, size: 20),
+                              ],
+                            ),
+                          ),
+                        ),
+                        _field('With', _with, hint: 'e.g. Dr Patel, health visitor'),
+                        _field('Where', _place, hint: 'e.g. Riverside clinic'),
+                        _field('To ask or bring', _notes,
+                            hint: 'Questions to ask, what to bring', maxLines: 3),
+                      ],
                       if (!past) visitNotes,
                       if (_isEditing)
                         Padding(

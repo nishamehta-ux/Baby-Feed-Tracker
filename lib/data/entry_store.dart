@@ -88,17 +88,6 @@ class EntryStore extends ChangeNotifier {
     await _prefs?.setString(_dismissedKey, id);
   }
 
-  /// The most recent appointment of the last [within] that has no visit
-  /// notes yet, to ask how it went; or null.
-  Appointment? visitNotesDue(DateTime now, {Duration within = const Duration(days: 14)}) {
-    final from = now.subtract(within);
-    Appointment? due;
-    for (final a in appointments) {
-      if (a.start.isAfter(from) && a.start.isBefore(now) && a.visitNotes.trim().isEmpty) due = a;
-    }
-    return due;
-  }
-
   /// A code entered under Join a family, waiting for syncing to connect.
   String? get joinCode => _joinCode;
 
